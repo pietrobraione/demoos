@@ -34,4 +34,6 @@ unsigned char uart_getc();
 
 void uart_puts(const char* str);
 
+void uart_hex(unsigned long num);
+
 #endif

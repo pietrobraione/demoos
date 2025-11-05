@@ -75,3 +75,17 @@ void uart_puts(const char* str)
 		uart_putc((unsigned char)str[i]);
 }
 
+void putc ( void* p, char c)
+{
+	uart_putc(c);
+}
+
+void uart_hex(unsigned long num)
+{
+    uart_puts("0x");
+    for (int i = 60; i >= 0; i -= 4) {
+        unsigned int nibble = (num >> i) & 0xF;
+        uart_putc("0123456789ABCDEF"[nibble]);
+    }
+}
+
