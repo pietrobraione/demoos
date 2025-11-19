@@ -1,7 +1,8 @@
 #include "uart.h"
-#include <stddef.h> 
+#include <stddef.h>
 #include "../../libs/mmio.h"
 #include "../mbox/mbox.h"
+#include "../../libs/utils.h"
 
 void uart_init()
 {
@@ -146,4 +147,3 @@ void handle_uart_irq(void)
         mmio_write(UART0_ICR, (1 << 6));
     }
 }
-

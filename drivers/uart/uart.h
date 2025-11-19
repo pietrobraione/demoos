@@ -4,7 +4,7 @@
 enum {
   // The base address for UART0.
   UART0_BASE = 0x201000,
-  
+
   // The offsets for reach register for the UART.
   UART0_DR     = (UART0_BASE + 0x00),
   UART0_RSRECR = (UART0_BASE + 0x04),
@@ -25,7 +25,7 @@ enum {
   UART0_ITOP   = (UART0_BASE + 0x88),
   UART0_TDR    = (UART0_BASE + 0x8C)
 };
-  
+
 void uart_init();
 
 void uart_putc(unsigned char c);
@@ -35,5 +35,7 @@ unsigned char uart_getc();
 void uart_puts(const char* str);
 
 void uart_hex(unsigned long num);
+
+void handle_uart_irq(void);
 
 #endif
