@@ -25,7 +25,7 @@ _start:
 
 already_el1:
     ldr	x0, =SCTLR_VALUE_MMU_DISABLED
-	msr	sctlr_el1, x0		
+	msr	sctlr_el1, x0
     isb
 
     mrs     x5, mpidr_el1
@@ -51,4 +51,3 @@ clear_bss_loop:
 kernel_launch:
     bl  kernel_main
     b   wait_for_event
-

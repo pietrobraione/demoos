@@ -5,6 +5,7 @@
 #include "../drivers/framebuffer/framebuffer.h"
 #include "../drivers/timer/timer.h"
 #include "../drivers/irq/controller.h"
+#include "../drivers/sd/sd.h"
 
 void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 {
@@ -22,6 +23,13 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
     timer_init();
     enable_interrupt_controller();
     enable_irq();
+
+    int sd_ok = sd_init();
+    if (sd_ok == SD_OK) {
+        uart_puts("SD card initialized successfully\n");
+    } else {
+        uart_puts("SD card initialization failed\n");
+    }
 
     // Ora gli interrupt gestiscono RX/TX della UART e il timer.
     // Non serve più loop su uart_getc().

@@ -103,12 +103,12 @@ static inline int uart_tx_fifo_not_full(void) {
 // Gestore interrupt UART
 void handle_uart_irq(void)
 {
-	uart_puts("UART interrupt received");
+	// uart_puts("UART interrupt received");
     unsigned int mis = mmio_read(UART0_MIS);
 
     // RX interrupt
     if (mis & (1 << 4)) {
-	uart_puts(": type RX\r\n");
+        // uart_puts(": type RX\r\n");
         while (uart_rx_fifo_not_empty()) {
             unsigned int dr = mmio_read(UART0_DR);
             unsigned int err = (dr >> 8) & 0xF;

@@ -70,6 +70,6 @@ Cosa succede quando viene generato un interrupt? Supponiamo di aver inviato un c
 - La CPU controlla l'indirizzo in cui si trova la tabella degli interrupt (è stato scritto durante l'inizializzazione)
 - La CPU, in base al livello di eccezione, salta a una procedura assembly; nel nostro caso salta a `irq_el1`
 - Questa procedura passa in modalità kernel e invoca `handle_irq`
-- La funzione `handle_irq` è scritta in c e controlla quale dispositivo ha generto l'interrupt
+- La funzione `handle_irq` è scritta in c e controlla quale dispositivo ha generato l'interrupt
 - Chiama una funzione diversa per gestire ogni dispositivo
 - Nel nostro esempio, chiama la funzione `handle_uart_irq` che stampa a schermo il carattere scritto

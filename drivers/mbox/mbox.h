@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-enum {  
+enum {
     // The offsets for Mailbox registers
     MBOX_BASE    = 0xB880,
     MBOX_READ    = (MBOX_BASE + 0x00),
