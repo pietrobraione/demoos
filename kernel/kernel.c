@@ -26,9 +26,9 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 
     int sd_ok = sd_init();
     if (sd_ok == SD_OK) {
-        uart_puts("SD card initialized successfully\n");
+        uart_puts("SD card initialized OK\n");
     } else {
-        uart_puts("SD card initialization failed\n");
+        uart_puts("SD card initialization FAILED\n");
     }
 
     // Ora gli interrupt gestiscono RX/TX della UART e il timer.
