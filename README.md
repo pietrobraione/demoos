@@ -1,4 +1,5 @@
 # demoos
+**demoOS** è un sistema operativo **bare‑metal** progettato per il Raspberry Pi 3B, scritto in C e Assembly. Non dipende da alcun sistema operativo o libreria standard: viene eseguito direttamente sull’hardware, gestendo periferiche e risorse in modo autonomo.
 
 ## Installazione
 Prima di eseguire il sistema operativo, assicurati di avere installato i seguenti pacchetti:
@@ -20,11 +21,25 @@ sudo ln -s $(which aarch64-linux-gnu-ld) /usr/local/bin/aarch64-elf-ld
 sudo apt-get install qemu-system-arm
 ```
 
-## Esecuzione
+## Compilazione ed Esecuzione
 
-Per eseguire demoos in qemu, lancia questo comando:
+### Comandi principali
+``` bash
+make          # compila il tutto e genera il file kernel8.img
+make run      # esegue il kernel in QEMU (emulazione Raspberry Pi 3B)
+make clean    # rimuove file oggetto e binari generati
+```
+
+### Primo avvio
+Se è la prima volta che compili ed esegui DemoOS in QEMU:
 ``` bash
 make
+make run
+```
+
+### Avvio successivo
+Se il file `kernel8.img` è già presente e non hai modificato il codice:
+``` bash
 make run
 ```
 
