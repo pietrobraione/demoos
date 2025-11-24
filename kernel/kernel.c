@@ -2,10 +2,11 @@
 #include <stdint.h>
 #include "../libs/utils.h"
 #include "../drivers/uart/uart.h"
-#include "../drivers/framebuffer/framebuffer.h"
 #include "../drivers/timer/timer.h"
 #include "../drivers/irq/controller.h"
 #include "../drivers/sd/sd.h"
+
+void process(char* array);
 
 void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 {
@@ -35,5 +36,14 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
     // Ora gli interrupt gestiscono RX/TX della UART e il timer.
     // Non serve più loop su uart_getc().
     while (1) {
+    }
+}
+
+void process(char* array) {
+    while (1) {
+        for (int i = 0; i < 5; i++) {
+            uart_putc(array[i]);
+            delay(100000);
+        }
     }
 }
