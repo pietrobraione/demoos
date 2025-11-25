@@ -1,6 +1,10 @@
 #ifndef _SCHEDULER_H
 #define _SCHEDULER_H
 
+#define CPU_CONTEXT_OFFSET_IN_PCB 0
+
+#ifndef __ASSEMBLER__
+
 #define N_PROCESSES 64
 
 struct cpu_context {
@@ -27,6 +31,8 @@ struct PCB {
     int preempt_disabled;
 };
 
+#define PROCESS_RUNNING 1
+
 #define INIT_TASK { \
     { 0,0,0,0,0,0,0,0,0,0,0,0,0 }, \
     0, 0, 1, 0 \
@@ -40,6 +46,7 @@ extern void preempt_enable();
 extern void preempt_disable();
 extern void _schedule();
 extern void switch_to_process(struct PCB*);
-extern void cpu_switch_to_process(struct PCB*, struct PCB*);
+extern void handle_timer_tick();
 
+#endif
 #endif

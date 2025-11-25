@@ -14,6 +14,8 @@
 #define PAGING_MEMORY (HIGH_MEMORY - LOW_MEMORY)
 #define N_PAGES (PAGING_MEMORY / PAGE_SIZE)
 
+#define PROCESS_SIZE 4096
+
 unsigned long get_free_page();
 void free_page(unsigned long p);
 

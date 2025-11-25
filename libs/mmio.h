@@ -59,4 +59,3 @@
  #define EMMC_SLOTISR_VER    ((volatile unsigned int*)(MMIO_BASE+0x003000FC))
 
  #endif
-

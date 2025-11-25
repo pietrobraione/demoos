@@ -21,9 +21,13 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
 
     // Inizializza vettore IRQ e timer
     irq_vector_init();
+    uart_puts("[DEBUG] IRQ vector INIT successful\n");
     timer_init();
+    uart_puts("[DEBUG] Timer INIT successful\n");
     enable_interrupt_controller();
+    uart_puts("[DEBUG] Interrupt controller INIT successful\n");
     enable_irq();
+    uart_puts("[DEBUG] IRQ ENABLE successful\n");
 
     // EMMC non funziona su qemu
     int sd_ok = sd_init();
