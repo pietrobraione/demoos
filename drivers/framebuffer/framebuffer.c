@@ -48,9 +48,9 @@ int framebuffer_init()
   mbox[33] = 0;                    //will be filled with the pitch
   mbox[34] = MBOX_TAG_LAST;
 
-  int ok;
-  if (ok = (mbox_call(MBOX_CH_PROP) && mbox[20] == DEPTH && mbox[28] != NULL)) {
-    framebuffer_address = (void *) (uint32_t) (mbox[28] & 0x3FFFFFFF);
+  int ok = (mbox_call(MBOX_CH_PROP) && mbox[20] == DEPTH && mbox[28] != 0);
+  if (ok) {
+    framebuffer_address = (void *) (uint64_t) (mbox[28] & 0x3FFFFFFF);
     width = mbox[5];
     height = mbox[6];
     pitch = mbox[33];
@@ -72,7 +72,7 @@ typedef struct {
     unsigned char glyphs;
 } __attribute__((packed)) psf_t;
 
-extern volatile uint8_t _binary_font_font_psf_start;
+extern volatile psf_t __font_start;
 
 /**
  * Display a string using fixed size PSF
@@ -80,16 +80,17 @@ extern volatile uint8_t _binary_font_font_psf_start;
 void framebuffer_print(int x, int y, char *s)
 {
   // get our font
-  psf_t *font = (psf_t*)&_binary_font_font_psf_start;
+  volatile psf_t *font = &__font_start;
   // draw next character if it's not zero
-  while(*s) {
+  while (*s) {
     // get the offset of the glyph. Need to adjust this to support unicode table
-    unsigned char *glyph = (unsigned char*)&_binary_font_font_psf_start +
+    unsigned char *glyph = (unsigned char *) font +
       font->headersize + (*((unsigned char*)s) < font->numglyph ? *s : 0) * font->bytesperglyph;
     // calculate the offset on screen
     int offs = (y * pitch) + (x * 4);
     // variables
-    int i,j, line,mask, bytesperline=(font->width+7)/8;
+    unsigned int i, j; 
+    int line, mask, bytesperline=(font->width+7)/8;
     // handle carriage return
     if(*s == '\r') {
       x = 0;

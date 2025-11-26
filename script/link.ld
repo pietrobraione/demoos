@@ -8,18 +8,22 @@ SECTIONS
 		KEEP(*(.text.boot))
 		*(.text)
 	}
+	. = ALIGN(4096);
 
+	__font_start = .;
 	.rodata :
 	{
+		font/font.o
 		*(.rodata)
 	}
+	. = ALIGN(4096);
 
 	.data :
 	{
 		*(.data)
 	}
-
 	. = ALIGN(4096);
+
 	__bss_start = .;
 	.bss :
 	{

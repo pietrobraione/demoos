@@ -78,7 +78,7 @@ void uart_puts(const char* str)
 		uart_putc((unsigned char)str[i]);
 }
 
-void putc ( void* p, char c)
+void putc(char c)
 {
 	uart_putc(c);
 }
