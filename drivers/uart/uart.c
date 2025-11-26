@@ -12,15 +12,15 @@ void uart_init()
 	// Setup the GPIO pin 14 && 15.
 
 	// Disable pull up/down for all GPIO pins & delay for 150 cycles.
-	mmio_write(GPPUD, 0x00000000);
+	mmio_write(*GPPUD, 0x00000000);
 	delay(150);
 
 	// Disable pull up/down for pin 14,15 & delay for 150 cycles.
-	mmio_write(GPPUDCLK0, (1 << 14) | (1 << 15));
+	mmio_write(*GPPUDCLK0, (1 << 14) | (1 << 15));
 	delay(150);
 
 	// Write 0 to GPPUDCLK0 to make it take effect.
-	mmio_write(GPPUDCLK0, 0x00000000);
+	mmio_write(*GPPUDCLK0, 0x00000000);
 
 	// Clear pending interrupts.
 	mmio_write(UART0_ICR, 0x7FF);
