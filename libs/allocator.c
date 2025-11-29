@@ -11,3 +11,7 @@ unsigned long get_free_page() {
     }
     return 0;
 }
+
+void free_page(unsigned long p) {
+    memory_pages[(p - LOW_MEMORY) / PAGE_SIZE] = 0;
+}

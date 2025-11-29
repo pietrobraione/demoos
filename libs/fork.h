@@ -1,6 +1,26 @@
 #ifndef _FORK_H
 #define _FORK_H
 
-int fork(unsigned long, unsigned long);
+#include "scheduler.h"
+
+#define PSR_MODE_EL0t	0x00000000
+#define PSR_MODE_EL1t	0x00000004
+#define PSR_MODE_EL1h	0x00000005
+#define PSR_MODE_EL2t	0x00000008
+#define PSR_MODE_EL2h	0x00000009
+#define PSR_MODE_EL3t	0x0000000c
+#define PSR_MODE_EL3h	0x0000000d
+
+int fork(unsigned long, unsigned long, unsigned long, unsigned long);
+int move_to_user_mode(unsigned long);
+
+struct pt_regs* task_pt_regs(struct PCB*);
+
+struct pt_regs {
+    unsigned long registers[31];
+    unsigned long sp;
+    unsigned long pc;
+    unsigned long pstate;
+};
 
 #endif

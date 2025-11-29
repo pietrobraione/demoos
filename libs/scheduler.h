@@ -7,6 +7,10 @@
 
 #define N_PROCESSES 64
 
+#define THREAD_SIZE 4096
+
+#define PF_KTHREAD 0x00000002	
+
 struct cpu_context {
     unsigned long x19;
     unsigned long x20;
@@ -30,10 +34,13 @@ struct PCB {
     long priority;
     int preempt_disabled;
     long pid;
+
+    unsigned long stack;
+    unsigned long flags;
 };
 
 #define PROCESS_RUNNING 1
-#define PROCESS_TERMINATED 2
+#define PROCESS_ZOMBIE 2
 
 #define INIT_PROCESS \
     { {0,0,0,0,0,0,0,0,0,0,0,0,0}, \
@@ -49,6 +56,7 @@ extern void preempt_disable();
 extern void schedule();
 extern void switch_to_process(struct PCB*);
 extern void handle_timer_tick();
+extern void exit_process();
 
 #endif
 #endif
