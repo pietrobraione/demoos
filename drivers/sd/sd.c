@@ -22,8 +22,6 @@ int sd_init() {
     enable_clock_and_command();
     enable_data_pins();
 
-    uart_puts("[DEBUG] SD pins set up OK\n");
-
     sd_standard_version = (*EMMC_SLOTISR_VER & HOST_SPEC_NUM) >> HOST_SPEC_NUM_SHIFT;
 
     reset_emmc();
@@ -31,13 +29,9 @@ int sd_init() {
     *EMMC_CONTROL1 |= C1_CLK_INTLEN | C1_TOUNIT_MAX;
     wait_msec(10);
 
-    uart_puts("[DEBUG] EMMC reset OK\n");
-
     if (sd_set_clock(400000) == SD_ERROR) {
         return SD_ERROR;
     }
-
-    uart_puts("[DEBUG] SD clock set OK\n");
 
     // I enable the EMMC interrupts
     *EMMC_INT_EN = 0xFFFFFFFF;
@@ -68,7 +62,6 @@ int sd_init() {
 
     // Then the SD generates a Relative Card Address
     long sd_rca = sd_execute_command(CMD_SEND_REL_ADDR, 0);
-    uart_puts("[DEBUG] EMMC command CMD_SEND_REL_ADDR returned ");
     uart_hex(sd_rca >> 32);
     uart_hex(sd_rca);
     uart_puts("\n");
@@ -219,7 +212,6 @@ void reset_emmc() {
     // Maybe the bit reset is really fast but this is really sus
 
     while (*EMMC_CONTROL1 & C1_SRST_HC) {
-        uart_puts("[DEBUG] I'm waiting the controller to reset the CONTROL1\n");
     }
 }
 
@@ -232,7 +224,6 @@ int sd_set_clock(unsigned int frequency) {
         wait_msec(1);
 
         if (counter <= 0) {
-            uart_puts("[ERROR] Timeout expired for inhibiting flag in EMMC status\n");
             return SD_ERROR;
         }
     }
@@ -283,7 +274,6 @@ int sd_set_clock(unsigned int frequency) {
         counter--;
 
         if (counter <= 0) {
-            uart_puts("[ERROR] Timeout expired getting stable clock");
             return SD_ERROR;
         }
     }
@@ -299,7 +289,6 @@ int sd_execute_command(unsigned int code, unsigned int arg) {
     if (code & CMD_NEED_APP) {
         response = sd_execute_command(CMD_APP_CMD | sd_rca ? CMD_RSPNS_48 : 0, sd_rca);
         if (sd_rca && !response) {
-            uart_puts("[ERROR] Failed to send SD APP command\n");
             sd_error = SD_ERROR;
             return SD_ERROR;
         }
@@ -310,11 +299,13 @@ int sd_execute_command(unsigned int code, unsigned int arg) {
         uart_puts("[ERROR] EMMC is inhibit\n");
     }
 
+    /*
     uart_puts("[DEBUG] Sending command ");
     uart_hex(code);
     uart_puts(" with arg ");
     uart_hex(arg);
     uart_puts("to EMMC\n");
+    */
 
     *EMMC_INTERRUPT = *EMMC_INTERRUPT;
     *EMMC_ARG1 = arg;
@@ -327,7 +318,7 @@ int sd_execute_command(unsigned int code, unsigned int arg) {
     }
 
     if ((response = sd_wait_for_interrupt(INT_CMD_DONE))) {
-        uart_puts("[ERROR] Failed to send EMMC command\n");
+        // uart_puts("[ERROR] Failed to send EMMC command\n");
         sd_error = response;
         return -1;
     }
