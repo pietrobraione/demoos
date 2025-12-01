@@ -37,14 +37,28 @@ void kernel_main(uint64_t dtb_ptr32, uint64_t x1, uint64_t x2, uint64_t x3)
         fork(process, i);
     }
 
-    while (1) {
+	// Non serve piu', lo switch dei processi e' ora deciso dal timer
+    /*while (1) {
         schedule();
-    }
+    }*/
+
+	// Necessario solo per SCHEDULING COOPERATIVO,
+	// Forza l'esecuzione del primo processo
+	// modificare linea 74, libs/scheduler.c ogni volta che si cambia modalita'
+	//schedule();
+
 }
 
 void process(int a) {
-    uart_puts("Sono il processo ");
-    uart_hex(a);
-    uart_puts("\n");
-    exit();
+	while(1) {
+		uart_puts("Sono il processo ");
+		uart_hex(a);
+		uart_puts("\n");
+		for (volatile unsigned long i = 0; i < 20000000; i++); // Simula lavoro}
+		
+		// Necessario solo per SCHEDULING COOPERATIVO,
+		// modificare linea 74, libs/scheduler.c ogni volta che si cambia modalita'
+		//schedule();
+	}
+
 }
