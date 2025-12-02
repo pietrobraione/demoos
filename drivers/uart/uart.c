@@ -129,7 +129,7 @@ void handle_uart_irq(void)
 
     // TX interrupt
     if (mis & (1 << 5)) {
-	uart_puts(": type TX\r\n");
+		// uart_puts(": type TX\r\n");
         // Se non hai buffer TX, disabilita TXIM
         unsigned int imsc = mmio_read(UART0_IMSC);
         mmio_write(UART0_IMSC, imsc & ~(1 << 5));

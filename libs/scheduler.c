@@ -85,7 +85,20 @@ void handle_timer_tick() {
 }
 
 // Terminates the current process
-int exit() {
-    current_process->state = PROCESS_TERMINATED;
-    _schedule();
+void exit_process() {
+    preempt_disable();
+
+    for (int i = 0; i < N_PROCESSES; i++) {
+        if (processes[i] == current_process) {
+            processes[i]->state = PROCESS_ZOMBIE;
+            break;
+        }
+    }
+
+    if (current_process->stack) {
+        free_page(current_process->stack);
+    }
+
+    preempt_enable();
+    schedule();
 }

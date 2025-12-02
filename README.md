@@ -59,6 +59,7 @@ make run
 ## Flusso di avvio
 
 ### Boot
+
 `start.s` è il codice assembly di bootstrap
   - `_start` è il punto di ingresso; verifica il livello di eccezione, e se questo non è EL1 lo porta a EL1
   - Inizializza il core primario: stack pointer, prepara e azzera la bss
@@ -67,6 +68,7 @@ make run
     N.B. Nel nostro caso il kernel va esso stesso in loop; è possibile rimuovere il loop del kernel in quanto il bootstrap va già in loop
 
 ### Kernel
+
 Il kernel svolge i seguenti passi:
 - `uart_init`: inizializza i registri memory mapped della UART
 - `uart_putc`: aspetta che la UART sia pronta, e poi scrive il carattere nel registro memory mapped
@@ -80,15 +82,56 @@ Dopo questo, il kernel va in loop; la CPU è stata istruita dal kernel su come g
 
 ### Interrupt
 
-Cosa succede quando viene generato un interrupt? Supponiamo di aver inviato un **carattere** sulla UART
-- La **UART** alza la linea di interrupt corrispondente (**IRQ #57**, vedi BCM2835-ARM-Peripherals, pag.113)
-- Il **controller degli interruput** rileva il segnale e lo marca come "pending" nel registro `IRQ_PENDING_2` (e' il registro che si occupa dei IRQ #32-#63)
-- La **CPU** interrompe il flusso normale di esecuzione e consulta trova la tabella degli interrupt (il cui indirizzo e' stato memorizzato nel registro `VBAR_EL1` durante l'iniziazlizzione)
-- In base al tipo di evento e al livello di eccezione, salta a una routine precisa; nel nostro caso salta a `el1_irq`
-- Questa routine eseugue la macro `kernel_entry` che salva tutti i registri sullo stack per preservare lo stato del programma interrotto.
-- Successivamente viene chiamata la funzione `handle_irq`.
-- Questa funzione legge i registri `IRQ_PENDING_1` e `IRQ_PENDING_2` e controlla quale dispositivo ha generato l'interrupt.
-- Vedendo che il bit attivo e' presente in `IRQ_PENDING_2` con valore **IRQ #57**, riconosce che l’interrupt è stato generato dalla **UART**
-- A questo punt, la funzione `handle_irq` chiama `handle_uart_irq` che si occupera' di gestire l'interrupt/
-- Una volta gestito l'evento, il flusso torna `el1_irq` che terminera' eseguendo la macro `kernel_exit`, macro che riprisinera' tutti i registri salvati.
-- Infine viene eseguita l'istruzione `eret` che segnalera' alla CPU la fine della gestione dell'interrupt.
+Cosa succede quando viene generato un interrupt? Supponiamo di aver inviato un carattere sulla UART
+- La UART genera un interrupt
+- La CPU controlla l'indirizzo in cui si trova la tabella degli interrupt (è stato scritto durante l'inizializzazione)
+- La CPU, in base al livello di eccezione, salta a una procedura assembly; nel nostro caso salta a `irq_el1`
+- Questa procedura passa in modalità kernel e invoca `handle_irq`
+- La funzione `handle_irq` è scritta in c e controlla quale dispositivo ha generato l'interrupt
+- Chiama una funzione diversa per gestire ogni dispositivo
+- Nel nostro esempio, chiama la funzione `handle_uart_irq` che stampa a schermo il carattere scritto
+
+### Processi
+
+#### Thread kernel
+
+Per creare un thread a livello del kernel, è necessario invocare la funzione `fork` passandogli:
+- La flag `PF_KTHREAD` (che indica che il thread che vogliamo creare lavorerà a livello kernel)
+- La funzione che verrà eseguita da quel thread
+- Un argomento da passare a quella funzione
+- Lo stack (non è da passare perché la funzione a livello kernel non lo usa)
+
+Una volta invocata, la `fork`:
+- Disabilita il preempt (per evitare che questo thread venga interrotto mentre sta creando il nuovo thread)
+- Crea un nuovo PCB, allocandolo in memoria alla prima pagina libera
+- Calcola il puntatore alla zona del PCB che contiene i registri della CPU
+- Resetta il contenuto dei registri nel PCB (penso che lo faccia per evitare che ci fosse scritto qualcosa in memoria)
+- Il comportamento del metodo varia in base al tipo di thread che stiamo creando:
+  - Se stiamo creando un thread del kernel, allora vengono impostati i registri che indicano quale funzione deve eseguire il thread e quale parametro gli viene passato
+  - Altrimenti, vengono copiati i registri del thread in esecuzione attualmente nel nuovo PCB, e viene modificato lo stack pointer con quello passato dalla funzione
+- Dopodiché vengono impostati i campi del PCB (flag, priorità, stato...)
+- Il program counter del nuovo processo viene impostato all'indirizzo della funzione passata tramite la procedura assembly `ret_from_fork`
+- Il nuovo PCB viene salvato nel sistema e viene ritornato il PID appena creato
+
+#### Thread utente
+
+In questo momento abbiamo quindi un thread del kernel in esecuzione; è necessario però spostare questo kernel nello spazio utente per renderlo utile.  
+Per farlo possiamo invocare la funzione `move_to_user_mode`, che prende in ingresso un puntatore alla funzione che verrà eseguita dal processo utente.  
+La `move_to_user_mode`:
+- Resetta il contenuto dei registri del PCB del processo corrente
+- Imposta il program counter con quello passato in input
+- Imposta lo stato del processo MODE_EL0 (l'assembly lo userà per dire al processore di cambiare livello)
+- Viene allocato un nuovo stack per il processo e viene modificato lo stack pointer per puntare alla fine della pagina dedicata allo stack (lo sp cresce al contrario)
+
+Dopo aver fatto questi passi, il processo utente sarà eseguito e potrà invocare le systemcall per interagire con il sistema operativo. 
+
+### Systemcall
+
+Le systemcall sono le funzioni esposte dal sistema operativo e che possono essere invocate dai processi utenti.  
+Cosa succede quando un processo invoca una systemcall? Prendiamo l'esempio della `call_syscall_write`; le altre fanno lo stesso giro per essere eseguite e per ritornare e hanno solamente un comportamento diverso
+- Questa funzione è una procedura scritta in assembly che scrive nel registro w8 il numero della syscall write (write=0, malloc=1, clone=2, exit=3)
+- Dopodiché genera un'eccezione sincrona con l'istruzione `svc`
+- All'interno di `irq/entry.S` è stata definita la macro `el0_svc` che si occupa di gestire l'eccezione sincrona generata
+- Dentro a `syscalls.c` abbiamo definito un vettore di puntatori ai gestori delle syscall
+- L'assembly usa il numero di eccezione come indice in questo array e salta alla funzione di gestione della systemcall, definite in `syscalls.c`
+- All'interno di questa funzione, viene fatto ciò che la systemcall deve fare, ad esempio stampare a schermo il messaggio
