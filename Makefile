@@ -4,7 +4,7 @@ LD := aarch64-elf-ld
 OBJCOPY := aarch64-elf-objcopy
 
 # Flags
-CFLAGS := -Wall -Wextra -O2 -ffreestanding -nostdlib -nostartfiles
+CFLAGS := -Wall -Wextra -O2 -ffreestanding -nostdlib -nostartfiles -fno-stack-protector -mstrict-align -mcpu=cortex-a53+nofp
 LDFLAGS := -nostdlib
 
 # Sorgenti
