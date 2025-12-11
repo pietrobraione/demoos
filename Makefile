@@ -1,23 +1,38 @@
+# Toolchain
 CC := aarch64-elf-gcc
-AS := aarch64-elf-as
 LD := aarch64-elf-ld
 OBJCOPY := aarch64-elf-objcopy
 
+# Flags
 CFLAGS := -Wall -Wextra -O2 -ffreestanding -nostdlib -nostartfiles
 LDFLAGS := -nostdlib
 
+# Sorgenti
+C_SRCS := $(wildcard drivers/*/*.c kernel/*.c utils/*.c libs/*.c)
+S_SRCS := $(wildcard drivers/*/*.S boot/*.S libs/*.S)
+PSF_SRCS := $(wildcard font/*.psf)
+
+# Oggetti
+C_OBJS := $(C_SRCS:.c=.o)
+S_OBJS := $(S_SRCS:.S=.o)
+PSF_OBJS := $(PSF_SRCS:.psf=.o)
+
+OBJS := $(C_OBJS) $(S_OBJS) $(PSF_OBJS)
+
+# Target
 all: kernel8.img
 
 kernel8.img: kernel8.elf
-	$(OBJCOPY) -O binary kernel8.elf kernel8.img
+	$(OBJCOPY) -O binary $< $@
 
-kernel8.elf: boot/start.o drivers/framebuffer.o drivers/mbox.o drivers/uart.o font/font.o kernel/kernel.o
-	$(LD) $(LDFLAGS) boot/start.o drivers/framebuffer.o drivers/mbox.o drivers/uart.o font/font.o kernel/kernel.o -T script/link.ld -o kernel8.elf
+kernel8.elf: $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -T script/link.ld -o $@
 
-start.o: start.S
-	$(CC) $(CFLAGS) -c start.S -o start.o
-
+# Regole di compilazione
 %.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.psf
@@ -27,5 +42,5 @@ run:
 	qemu-system-aarch64 -M raspi3b -kernel kernel8.img -serial stdio
 
 clean:
-	rm kernel8.elf kernel8.img boot/start.o drivers/framebuffer.o drivers/mbox.o drivers/uart.o font/font.o kernel/kernel.o >/dev/null 2>/dev/null || true
+	rm -f kernel8.elf kernel8.img $(OBJS)
 
