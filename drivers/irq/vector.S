@@ -1,15 +1,23 @@
-.globl irq_vector_init
+/**
+ * Inizializzazione della base dei vettori e maschere IRQ.
+ */
+
+	.globl irq_vector_init
 irq_vector_init:
-	adr	x0, vectors		// load VBAR_EL1 with virtual
-	msr	vbar_el1, x0		// vector table address
+	// Carica VBAR_EL1 con l’indirizzo della tabella dei vettori
+	adr	 x0, vectors
+	msr	 vbar_el1, x0
 	ret
 
-.globl enable_irq
+	.globl enable_irq
 enable_irq:
-	msr    daifclr, #2
+	// Abilita IRQ (pulisce il bit I nel DAIF)
+	msr	 daifclr, #2
 	ret
 
-.globl disable_irq
+	.globl disable_irq
 disable_irq:
-	msr	daifset, #2
+	// Disabilita IRQ (imposta il bit I nel DAIF)
+	msr	 daifset, #2
 	ret
+

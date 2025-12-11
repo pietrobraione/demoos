@@ -25,9 +25,9 @@ sudo apt-get install qemu-system-arm
 
 ### Comandi principali
 ``` bash
-make          # compila il tutto e genera il file kernel8.img
-make run      # esegue il kernel in QEMU (emulazione Raspberry Pi 3B)
-make clean    # rimuove file oggetto e binari generati
+make			# compila il tutto e genera il file kernel8.img
+make run		# esegue il kernel in QEMU (emulazione Raspberry Pi 3B)
+make clean	# rimuove file oggetto e binari generati
 ```
 
 ### Primo avvio
@@ -50,10 +50,10 @@ make run
 - `script`: script che dice al linker come posizionare le sezioni del programma in memoria, e che definisce l'entry point
 - `kernel`: contiene il codice del kernel
 - `drivers`: contiene i driver per le periferiche
-  - `uart`: driver periferiche UART
-  - `timer`: driver per timer
-  - `mbox` driver per comunicare con framebuffer
-  - `irq`: vettori di eccezioni e interrupt, con un controller scritto in c
+	- `uart`: driver periferiche UART
+	- `timer`: driver per timer
+	- `mbox` driver per comunicare con framebuffer
+	- `irq`: vettori di eccezioni e interrupt, con un controller scritto in c
 - `libs`: contiene le librerie di utilità
 
 ## Flusso di avvio
@@ -61,11 +61,11 @@ make run
 ### Boot
 
 `start.s` è il codice assembly di bootstrap
-  - `_start` è il punto di ingresso; verifica il livello di eccezione, e se questo non è EL1 lo porta a EL1
-  - Inizializza il core primario: stack pointer, prepara e azzera la bss
-  - Mette in standby i core secondari, in attesa che vengano risvegliati dal core primario
-  - Lancia il kernel (prima lanciando il file kernel.c, e poi rimanendo in attesa in eventi andando in loop)
-    N.B. Nel nostro caso il kernel va esso stesso in loop; è possibile rimuovere il loop del kernel in quanto il bootstrap va già in loop
+	- `_start` è il punto di ingresso; verifica il livello di eccezione, e se questo non è EL1 lo porta a EL1
+	- Inizializza il core primario: stack pointer, prepara e azzera la bss
+	- Mette in standby i core secondari, in attesa che vengano risvegliati dal core primario
+	- Lancia il kernel (prima lanciando il file kernel.c, e poi rimanendo in attesa in eventi andando in loop)
+	N.B. Nel nostro caso il kernel va esso stesso in loop; è possibile rimuovere il loop del kernel in quanto il bootstrap va già in loop
 
 ### Kernel
 
@@ -73,7 +73,7 @@ Il kernel svolge i seguenti passi:
 - `uart_init`: inizializza i registri memory mapped della UART
 - `uart_putc`: aspetta che la UART sia pronta, e poi scrive il carattere nel registro memory mapped
 - `irq_vector_init`: inizializza il vettore delle eccezioni
-  - Per farlo, chiama una procedura assembly che carica in un registro la posizione in memoria del vettore
+	- Per farlo, chiama una procedura assembly che carica in un registro la posizione in memoria del vettore
 - `timer_init`: scrive nel registri memory mapped del timer il valore del clock
 - `enable_interrupt_controller`: abilita i registri memory mapped per attivare la ricezione degli interrupt di timer e UART
 - `enable_irq`: procedura assembly che abilita la ricezione degli interrupt
@@ -107,16 +107,16 @@ Una volta invocata, la `fork`:
 - Calcola il puntatore alla zona del PCB che contiene i registri della CPU
 - Resetta il contenuto dei registri nel PCB (penso che lo faccia per evitare che ci fosse scritto qualcosa in memoria)
 - Il comportamento del metodo varia in base al tipo di thread che stiamo creando:
-  - Se stiamo creando un thread del kernel, allora vengono impostati i registri che indicano quale funzione deve eseguire il thread e quale parametro gli viene passato
-  - Altrimenti, vengono copiati i registri del thread in esecuzione attualmente nel nuovo PCB, e viene modificato lo stack pointer con quello passato dalla funzione
+	- Se stiamo creando un thread del kernel, allora vengono impostati i registri che indicano quale funzione deve eseguire il thread e quale parametro gli viene passato
+	- Altrimenti, vengono copiati i registri del thread in esecuzione attualmente nel nuovo PCB, e viene modificato lo stack pointer con quello passato dalla funzione
 - Dopodiché vengono impostati i campi del PCB (flag, priorità, stato...)
 - Il program counter del nuovo processo viene impostato all'indirizzo della funzione passata tramite la procedura assembly `ret_from_fork`
 - Il nuovo PCB viene salvato nel sistema e viene ritornato il PID appena creato
 
 #### Thread utente
 
-In questo momento abbiamo quindi un thread del kernel in esecuzione; è necessario però spostare questo kernel nello spazio utente per renderlo utile.  
-Per farlo possiamo invocare la funzione `move_to_user_mode`, che prende in ingresso un puntatore alla funzione che verrà eseguita dal processo utente.  
+In questo momento abbiamo quindi un thread del kernel in esecuzione; è necessario però spostare questo kernel nello spazio utente per renderlo utile.	
+Per farlo possiamo invocare la funzione `move_to_user_mode`, che prende in ingresso un puntatore alla funzione che verrà eseguita dal processo utente.	
 La `move_to_user_mode`:
 - Resetta il contenuto dei registri del PCB del processo corrente
 - Imposta il program counter con quello passato in input
@@ -127,7 +127,7 @@ Dopo aver fatto questi passi, il processo utente sarà eseguito e potrà invocar
 
 ### Systemcall
 
-Le systemcall sono le funzioni esposte dal sistema operativo e che possono essere invocate dai processi utenti.  
+Le systemcall sono le funzioni esposte dal sistema operativo e che possono essere invocate dai processi utenti.	
 Cosa succede quando un processo invoca una systemcall? Prendiamo l'esempio della `call_syscall_write`; le altre fanno lo stesso giro per essere eseguite e per ritornare e hanno solamente un comportamento diverso
 - Questa funzione è una procedura scritta in assembly che scrive nel registro w8 il numero della syscall write (write=0, malloc=1, clone=2, exit=3)
 - Dopodiché genera un'eccezione sincrona con l'istruzione `svc`

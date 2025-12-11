@@ -1,8 +1,11 @@
+/* Script di linking: posizionamento sezioni, font PSF, BSS e simboli ausiliari */
+
 ENTRY(_start)
 
 SECTIONS
 {
 	. = 0x80000;
+
 	.text :
 	{
 		KEEP(*(.text.boot))

@@ -1,104 +1,112 @@
+/**
+ * Scheduler round-robin con priorità.
+ * Gestisce la selezione del prossimo processo e il context switch.
+ */
+
 #include "scheduler.h"
 #include "cpu_switch.h"
 #include "../drivers/irq/controller.h"
-#include "../drivers/uart/uart.h" // TODO remove, only for debug
+#include "../drivers/uart/uart.h" // solo debug
 
-// First I create the init process which is the first one running
+// ==============================
+// Stato globale
+// ==============================
+
 static struct PCB init_process = INIT_PROCESS;
 struct PCB* current_process = &init_process;
 struct PCB* processes[N_PROCESSES] = {&init_process, };
 int n_processes = 1;
 
-void preempt_enable() {
-    current_process->preempt_disabled--;
+// ==============================
+// Preemption
+// ==============================
+
+void preempt_enable(void) {
+	current_process->preempt_disabled--;
 }
 
-void preempt_disable() {
-    current_process->preempt_disabled++;
+void preempt_disable(void) {
+	current_process->preempt_disabled++;
 }
 
-void _schedule() {
-    preempt_disable();
-    long max_counter, next_process_index;
-    while (1) {
-        max_counter = -1;
-        next_process_index = 0;
-        for (int i = 0; i < N_PROCESSES; i++) {
-            if (processes[i]) {
-                if (processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
-                    max_counter = processes[i]->counter;
-                    next_process_index = i;
-                }
-            }
-        }
+// ==============================
+// Scheduler interno
+// ==============================
 
-        if (max_counter) {
-            break;
-        }
+static void _schedule(void) {
+	preempt_disable();
+	long max_counter, next_process_index;
 
-        // uart_puts("[DEBUG] I can't find a process with more priority; increasing all\n");
-        // If I didn't find any process, I increment the counter of each one
-        for (int i = 0; i < N_PROCESSES; i++) {
-            if (processes[i]) {
-                processes[i]->counter = (processes[i]->counter >> 1) + processes[i]->priority;
-            }
-        }
-    }
-    switch_to_process(processes[next_process_index]);
-    preempt_enable();
+	while (1) {
+		max_counter = -1;
+		next_process_index = 0;
+
+		for (int i = 0; i < N_PROCESSES; i++) {
+			if (processes[i] && processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
+				max_counter = processes[i]->counter;
+				next_process_index = i;
+			}
+		}
+
+		if (max_counter > 0) break;
+
+		// Nessun processo pronto: incrementa i contatori
+		for (int i = 0; i < N_PROCESSES; i++) {
+			if (processes[i]) {
+				processes[i]->counter = (processes[i]->counter >> 1) + processes[i]->priority;
+			}
+		}
+	}
+
+	switch_to_process(processes[next_process_index]);
+	preempt_enable();
 }
 
-// Asks the scheduler to terminate the current project to run another one
-void schedule() {
-    // I give the current process the lower priority
-    current_process->counter = 0;
-    _schedule();
+void schedule(void) {
+	current_process->counter = 0;
+	_schedule();
 }
 
 void switch_to_process(struct PCB* next_process) {
-    if (current_process == next_process) {
-        return;
-    }
-    struct PCB* previous_process = current_process;
-    current_process = next_process;
-    cpu_switch_to_process(previous_process, current_process);
+	if (current_process == next_process) return;
+	struct PCB* previous_process = current_process;
+	current_process = next_process;
+	cpu_switch_to_process(previous_process, current_process);
 }
 
 void schedule_tail(void) {
-    preempt_enable();
+	preempt_enable();
 }
 
-void handle_timer_tick() {
-	// Necessario solo per SCHEDULING COOPERATIVO,
-	// modificare kernel/kernel.c ogni volta che si cambia modalita'
+void handle_timer_tick(void) {
+	// In modalità cooperativa si può disabilitare qui
 	// return;
 
-    uart_puts("[DEBUG] Handling timer tick\n");
-    current_process->counter -= 1;
-    if (current_process->counter > 0 || current_process->preempt_disabled == 1) {
-        return;
-    }
-    current_process->counter = 0;
-    enable_irq();
-    _schedule();
-    disable_irq();
+	uart_puts("[DEBUG] Handling timer tick\n");
+	current_process->counter -= 1;
+	if (current_process->counter > 0 || current_process->preempt_disabled == 1) return;
+
+	current_process->counter = 0;
+	enable_irq();
+	_schedule();
+	disable_irq();
 }
 
-// Terminates the current process
-void exit_process() {
-    preempt_disable();
+void exit_process(void) {
+	preempt_disable();
 
-    for (int i = 0; i < N_PROCESSES; i++) {
-        if (processes[i] == current_process) {
-            processes[i]->state = PROCESS_ZOMBIE;
-            break;
-        }
-    }
+	for (int i = 0; i < N_PROCESSES; i++) {
+		if (processes[i] == current_process) {
+			processes[i]->state = PROCESS_ZOMBIE;
+			break;
+		}
+	}
 
-    if (current_process->stack) {
-        free_page(current_process->stack);
-    }
+	if (current_process->stack) {
+		free_page(current_process->stack);
+	}
 
-    preempt_enable();
-    schedule();
+	preempt_enable();
+	schedule();
 }
+

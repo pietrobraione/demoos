@@ -7,19 +7,19 @@ OBJCOPY := aarch64-elf-objcopy
 CFLAGS := -Wall -Wextra -O2 -ffreestanding -nostdlib -nostartfiles
 LDFLAGS := -nostdlib
 
-# Sources
+# Sorgenti
 C_SRCS := $(wildcard drivers/*/*.c kernel/*.c utils/*.c libs/*.c)
 S_SRCS := $(wildcard drivers/*/*.S boot/*.S libs/*.S)
 PSF_SRCS := $(wildcard font/*.psf)
 
-# Objects
+# Oggetti
 C_OBJS := $(C_SRCS:.c=.o)
 S_OBJS := $(S_SRCS:.S=.o)
 PSF_OBJS := $(PSF_SRCS:.psf=.o)
 
 OBJS := $(C_OBJS) $(S_OBJS) $(PSF_OBJS)
 
-# Targets
+# Target
 all: kernel8.img
 
 kernel8.img: kernel8.elf
@@ -28,7 +28,7 @@ kernel8.img: kernel8.elf
 kernel8.elf: $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -T script/link.ld -o $@
 
-# Pattern rules
+# Regole di compilazione
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -43,3 +43,4 @@ run:
 
 clean:
 	rm -f kernel8.elf kernel8.img $(OBJS)
+

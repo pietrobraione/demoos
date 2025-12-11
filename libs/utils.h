@@ -1,8 +1,14 @@
-#ifndef _UTILS_H
-#define _UTILS_H
+#ifndef __UTILS_H
+#define __UTILS_H
 
-extern int get_el(void);
-extern void delay(unsigned long);
-extern void wait_msec(unsigned int);
+/**
+ * Funzioni di utilità assembly: livello di eccezione corrente,
+ * delay busy-wait e attesa millisecondi.
+ */
 
-#endif
+int get_el(void);
+void delay(unsigned long cycles);
+void wait_msec(unsigned int ms);
+
+#endif // __UTILS_H
+
