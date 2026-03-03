@@ -24,6 +24,7 @@ You also need to follow these steps to create a virtual disk that will let you u
 
 ``` bash
 sudo apt-get install dosfstools
+sudo apt-get install parted
 
 dd if=/dev/zero of=disk.img bs=1M count=64
 

@@ -431,17 +431,36 @@ void handle_write(char* buffer, char* working_directory) {
 
 void handle_fork_and_messages() {
   int pid = call_syscall_fork();
+
+  
   if (pid == 0) {
+    // The son will send 5 messages to the father
+    char* messages[] = {
+      "hello", "world", "demoos", "is", "great!"
+    };
     call_syscall_write("[SON] Sending message to father\n");
-    call_syscall_send_message(1, MESSAGE_TYPE_RAW, "Hi father, I am the son\n");
-    call_syscall_yield();
+    for (int i = 0; i < 5; i++) {
+      call_syscall_write("[SON] Message sent to father.\n");
+      int ok = call_syscall_send_message(1, MESSAGE_TYPE_RAW, messages[i]);
+      if (ok == -1) {
+        call_syscall_write("[SON] Error sending message to father.\n");
+        break;
+      }
+    }
     call_syscall_exit();
   } else {
-    call_syscall_write("[FATHER] Waiting process message...\n");
+    // This yield forces the child process to start sending messages, so the father buffer will be
+    // filled and the user process will need to be blocked and resumed
+    call_syscall_yield();
+
     char buffer[MAX_FILE_DIMENSION];
-    call_syscall_receive_message(MESSAGE_TYPE_RAW, buffer);
-    call_syscall_write("[FATHER] Message received from SON: ");
-    call_syscall_write(buffer);
+    for (int i = 0; i < 5; i++) {
+      memset(buffer, 0, MAX_FILE_DIMENSION);
+      call_syscall_receive_message(MESSAGE_TYPE_RAW, buffer);
+      call_syscall_write("[FATHER] Message received from SON: '");
+      call_syscall_write(buffer);
+      call_syscall_write("'.\n");
+    }
   }
 }
 

@@ -79,6 +79,7 @@ After the page tables for the kernel have been created, the bootloader jumps to
 the kernel to start the core functionalities of DemoOS.  
 
 The kernel starts its execution by initializing and enabling:
+
 - IRQ, to intercept the interrupt requests
 - UART, to communicate using the serial port
 - Filesystem on the SD card
@@ -171,6 +172,14 @@ as a char buffer
 - Signals (not working yet): messages which are intercepted and handled by the
 kernel
 
+Both sending and receiving messages are blocking:
+
+- When sending a message, if the destination process messages buffer is full, 
+the sender will be blocked and resumed the first time the destination process
+will pop a message from its buffer
+- When receiving a message, the process will wait to have at least a message
+in its buffer before continuing its execution
+
 ## System calls
 
 Each user process can invoke a system call to ask the kernel to perform a 
@@ -185,6 +194,7 @@ the `user_syscalls.h` and `user_syscalls.S` files: this libraries contain the
 functions to generate the SVC exception to invoke the system calls. 
 
 Let's see the flow of a system call invocation from the user process:
+
 - The user calls the `call_syscall_write` function from `user_syscalls.h`
 - This function generates an SVC with the code of the `syscall_write` defined in
 `user_syscalls.S`, which is `0`

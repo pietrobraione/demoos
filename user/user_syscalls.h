@@ -21,7 +21,7 @@ void call_syscall_yield();
 int call_syscall_input(char* buffer, int len);
 int call_syscall_fork();
 
-void call_syscall_send_message(int destination_pid, MessageType message_type, char* body);
+int call_syscall_send_message(int destination_pid, MessageType message_type, char* body);
 void call_syscall_receive_message(MessageType message_type, char* body);
 
 #endif
