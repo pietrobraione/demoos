@@ -217,18 +217,12 @@ int syscall_fork() {
   return pid;
 }
 
-int syscall_send_message(int destination_pid, MessageType message_type, char* body) {
-  if (message_type == MESSAGE_TYPE_RAW) {
-    return send_message(current_process, destination_pid, message_type, body);
-  } else {
-    uart_puts("[KERNEL] Message received from the kernel\n");
-  }
-
-  return 0;
+int syscall_send_message(int destination_pid, char* body) {
+  return send_message(current_process, destination_pid, body);
 }
 
-void syscall_receive_message(MessageType message_type, char* body) {
-  receive_message(current_process, message_type, body);
+void syscall_receive_message(char* body) {
+  receive_message(current_process, body);
 }
 
 void *const sys_call_table[] = {

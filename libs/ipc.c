@@ -5,7 +5,7 @@
 #include "../common/string.h"
 #include <stddef.h>
 
-int send_message(struct PCB* source_process, int destination_process_pid, MessageType message_type, char* body) {
+int send_message(struct PCB* source_process, int destination_process_pid, char* body) {
     struct Message* message = (struct Message*)allocate_kernel_page();
 
     struct PCB* destination_process = NULL;
@@ -21,7 +21,6 @@ int send_message(struct PCB* source_process, int destination_process_pid, Messag
     
     message->source_process = current_process;
     message->destination_process = destination_process;
-    message->type = message_type;
     strcpy(message->body, body);
 
     int push_ok = -1;
@@ -36,7 +35,7 @@ int send_message(struct PCB* source_process, int destination_process_pid, Messag
     return 0;
 }
 
-void receive_message(struct PCB* destination_process, MessageType message_type, char* body) {
+void receive_message(struct PCB* destination_process, char* body) {
     struct Message received_message;
 
     do {

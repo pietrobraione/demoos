@@ -441,7 +441,7 @@ void handle_fork_and_messages() {
     call_syscall_write("[SON] Sending message to father\n");
     for (int i = 0; i < 5; i++) {
       call_syscall_write("[SON] Message sent to father.\n");
-      int ok = call_syscall_send_message(1, MESSAGE_TYPE_RAW, messages[i]);
+      int ok = call_syscall_send_message(1, messages[i]);
       if (ok == -1) {
         call_syscall_write("[SON] Error sending message to father.\n");
         break;
@@ -456,7 +456,7 @@ void handle_fork_and_messages() {
     char buffer[MAX_FILE_DIMENSION];
     for (int i = 0; i < 5; i++) {
       memset(buffer, 0, MAX_FILE_DIMENSION);
-      call_syscall_receive_message(MESSAGE_TYPE_RAW, buffer);
+      call_syscall_receive_message(buffer);
       call_syscall_write("[FATHER] Message received from SON: '");
       call_syscall_write(buffer);
       call_syscall_write("'.\n");
@@ -474,7 +474,6 @@ void handle_signals() {
     }
     call_syscall_write("[SON] This line should never be printed\n");
   } else {
-    call_syscall_write("[FATHER] I forked myself but I want to terminate it\n");
-    call_syscall_send_message(pid, MESSAGE_TYPE_SIGNAL, NULL);
+    // FIXME send message
   }
 }

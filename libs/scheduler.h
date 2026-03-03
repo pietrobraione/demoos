@@ -62,7 +62,6 @@ struct mm_struct {
 struct Message {
     struct PCB* source_process;
     struct PCB* destination_process;
-    MessageType type;
     char body[MAX_MESSAGES_BODY_SIZE];
 };
 

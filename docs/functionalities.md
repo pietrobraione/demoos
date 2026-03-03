@@ -229,4 +229,4 @@ Let's see the flow of a system call invocation from the user process:
 | `syscall_exit()`  | Terminates the current process |
 | `syscall_fork()`  | Creates a copy of the current process and returns its PID |
 | `syscall_yield()` | Forces the scheduler to assign the CPU to a new process |
-| `syscall_send_message(int destination_pid, MessageType message_type, char* body)` | Sends a message to another process |
+| `syscall_send_message(int destination_pid, char* body)` | Sends a message to another process |

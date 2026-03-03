@@ -7,7 +7,7 @@
 extern int push_message(struct MessagesCircularBuffer* buffer, struct Message* message);
 extern int pop_message(struct MessagesCircularBuffer* buffer, struct Message* message);
 
-int send_message(struct PCB* source_process, int destination_process_pid, MessageType message_type, char* body);
-void receive_message(struct PCB* destination_process, MessageType message_type, char* body);
+int send_message(struct PCB* source_process, int destination_process_pid, char* body);
+void receive_message(struct PCB* destination_process, char* body);
 
 #endif

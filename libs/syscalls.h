@@ -21,8 +21,8 @@ int syscall_read_file(int file_descriptor, char* buffer, int len, int* bytes);
 void syscall_yield();
 int syscall_input(char* buffer, int len);
 int syscall_fork();
-int syscall_send_message(int destination_pid, MessageType message_type, char* body);
-void syscall_receive_message(MessageType message_type, char* body);
+int syscall_send_message(int destination_pid, char* body);
+void syscall_receive_message(char* body);
 
 int syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info);
 
