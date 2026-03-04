@@ -23,8 +23,8 @@ void _schedule() {
     next_process_index = 0;
     for (int i = 0; i < N_PROCESSES; i++) {
       if (processes[i]) {
-        if (processes[i]->state == PROCESS_RUNNING &&
-            processes[i]->counter > max_counter) {
+        handle_process_signals(processes[i]);
+        if (processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
           max_counter = processes[i]->counter;
           next_process_index = i;
         }
@@ -38,8 +38,7 @@ void _schedule() {
     // If I didn't find any process, I increment the counter of each one
     for (int i = 0; i < N_PROCESSES; i++) {
       if (processes[i]) {
-        processes[i]->counter =
-            (processes[i]->counter >> 1) + processes[i]->priority;
+        processes[i]->counter = (processes[i]->counter >> 1) + processes[i]->priority;
       }
     }
   }
@@ -73,6 +72,9 @@ void handle_process_signals(struct PCB* process) {
   } else if (process->pending_signals & (1 << SIGNAL_STOP)) {
     process->state = PROCESS_STOPPED;
     process->pending_signals &= ~(1 << SIGNAL_STOP);
+  } else if (process->pending_signals & (1 << SIGNAL_RESUME)) {
+    process->state = PROCESS_RUNNING;
+    process->pending_signals &= ~(1 << SIGNAL_RESUME);
   }
 }
 

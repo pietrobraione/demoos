@@ -127,10 +127,6 @@ int send_signal(int destination_process_pid, int signal_flag) {
         return -1;
     }
 
-    if (signal_flag >= SIGNALS_NUMBER) {
-        return -1;
-    }
-
     destination_process->pending_signals |= (1 << signal_flag);
 
     return 0;

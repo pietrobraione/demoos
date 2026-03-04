@@ -166,12 +166,20 @@ and then returns the *kernel* virtual address of the page.
 
 ### IPC
 
-Processes can communicate by sending messages. There are two type of messages:
+#### Messages
 
-- Raw messages: simple messages sent by a process to another to exchange data
-as a char buffer
-- Signals (not working yet): messages which are intercepted and handled by the
-kernel
+Processes can communicate by sending messages. Each process can accept a fixed 
+number of messages, which are contained inside a circular buffer in the process 
+PCB.  
+The message will be contained inside a raw char array, and the parsing of this 
+message must be handled by the destination process. 
+
+There are two operations which can make this IPC possible:
+
+- Send message: sends a message to another process and saves it inside its
+circular buffer
+- Receive message: reads the first message saved inside the process circular 
+buffer
 
 Both sending and receiving messages are blocking:
 
@@ -180,6 +188,18 @@ the sender will be blocked and resumed the first time the destination process
 will pop a message from its buffer
 - When receiving a message, the process will wait to have at least a message
 in its buffer before continuing its execution
+
+#### Signals
+
+A process can also send signals to another process. There are 3 types of signals:
+
+- Kill: terminates the process
+- Stop: stops the process execution until a Resume message is sent
+- Resume: resumes the execution of a stopped process
+
+Signals are non blocking and handled entirely by the kernel, in fact for the moment it's not 
+possible to define custom handlers for the signals. Furthermore, there is no control about who can
+send signals to other processes; for example, the son of a process can kill its father process. 
 
 ## System calls
 

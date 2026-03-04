@@ -480,5 +480,6 @@ void handle_signals() {
     call_syscall_yield();
     call_syscall_write("[FATHER] Now I resume my son.\n");
     call_syscall_send_signal(pid, SIGNAL_RESUME);
+    call_syscall_yield();
   }
 }
