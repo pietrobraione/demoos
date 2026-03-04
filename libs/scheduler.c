@@ -11,6 +11,8 @@ struct PCB *processes[N_PROCESSES] = {
 };
 int n_processes = 1;
 
+void handle_process_signals(struct PCB* process);
+
 void preempt_enable() { current_process->preempt_disabled--; }
 
 void preempt_disable() { current_process->preempt_disabled++; }

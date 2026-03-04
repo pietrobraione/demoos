@@ -6,7 +6,7 @@
 #include <stddef.h>
 
 int send_message(struct PCB* source_process, int destination_process_pid, char* body) {
-    struct Message* message = (struct Message*)allocate_kernel_page();
+    struct Message message;
 
     struct PCB* destination_process = NULL;
     for (int i = 0; i < n_processes; i++) {
@@ -19,13 +19,13 @@ int send_message(struct PCB* source_process, int destination_process_pid, char* 
         return -1;
     }
     
-    message->source_process = current_process;
-    message->destination_process = destination_process;
-    strcpy(message->body, body);
+    message.source_process = current_process;
+    message.destination_process = destination_process;
+    strcpy(message.body, body);
 
     int push_ok = -1;
     do {
-        push_ok = push_message(&destination_process->messages_buffer, message);
+        push_ok = push_message(&destination_process->messages_buffer, &message);
         if (push_ok == -1) {
             source_process->state = PROCESS_WAITING_TO_SEND_MESSAGE;
             schedule();
@@ -44,15 +44,14 @@ void receive_message(struct PCB* destination_process, char* body) {
             break;
         } else {
             current_process->state = PROCESS_WAITING_TO_RECEIVE_MESSAGE;
+            schedule();
         }
-        schedule();
     } while (1);
     strcpy(body, received_message.body);
 
     for (int i = 0; i < n_processes; i++) {
         if (processes[i]->state == PROCESS_WAITING_TO_SEND_MESSAGE) {
             processes[i]->state = PROCESS_RUNNING;
-            schedule();
         }
     }
 }
@@ -76,7 +75,6 @@ int push_message(struct MessagesCircularBuffer* buffer, struct Message* message)
     struct PCB* destination_process = message->destination_process;
     if (destination_process->state == PROCESS_WAITING_TO_RECEIVE_MESSAGE) {
         destination_process->state = PROCESS_RUNNING;
-        schedule();
     }
 
     return 0;
