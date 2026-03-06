@@ -97,7 +97,7 @@ struct PCB {
 #define PROCESS_WAITING_TO_SEND_MESSAGE 5
 #define PROCESS_STOPPED 6
 
-#define INIT_PROCESS {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, 1, 0, 0, 0, {}, {0, 0, {}, 0, {}}, {}}
+#define INIT_PROCESS {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, 1, 0, 0, 0, {}, {0, 0, {}, 0, {}}, {}, 0}
 
 extern struct PCB *current_process;
 extern struct PCB *processes[N_PROCESSES];

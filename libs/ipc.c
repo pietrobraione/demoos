@@ -129,11 +129,3 @@ int send_signal(int destination_process_pid, int signal_flag) {
 
     return 0;
 }
-
-void find_process_by_pid(int pid, struct PCB* destination_process) {
-    for (int i = 0; i < n_processes; i++) {
-        if (processes[i]->pid == pid) {
-            destination_process = processes[i];
-        }
-    }
-}
