@@ -7,6 +7,8 @@
 #include "scheduler.h"
 #include "../common/memory.h"
 
+int map_mmio_registers(struct PCB* process);
+
 // Creates a new process that executes the given function
 int copy_process(unsigned long clone_flags, unsigned long function, unsigned long argument) {
   // I disable the preempt to avoid this function to be interrupted
@@ -36,7 +38,11 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
     child_registers->registers[0] = 0;
 
     copy_virtual_memory(new_process);
-  }
+    int error = map_mmio_registers(new_process);
+    if (error) {
+      uart_puts("[ERROR] Cannot map MMIO in process page tables\n");
+    }
+ }
 
   int process_id = n_processes++;
 
@@ -81,7 +87,7 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
   }
 
   // I also need to map the addresses for MMIO to let the process communicate with the SD card
-  int error = map_sector(current_process, DEVICE_BASE, PHYS_MEMORY_SIZE - SECTION_SIZE, DEVICE_BASE, MMU_DEVICE_FLAGS);
+  int error = map_mmio_registers(current_process);
   if (error) {
     uart_puts("[ERROR] Cannot map MMIO in process page tables\n");
   }
@@ -93,4 +99,9 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
 struct pt_regs *task_pt_regs(struct PCB *process) {
   unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
   return (struct pt_regs *)p;
+}
+
+int map_mmio_registers(struct PCB* process) {
+  int error = map_sector(process, DEVICE_BASE, PHYS_MEMORY_SIZE - SECTION_SIZE, DEVICE_BASE, MMU_DEVICE_FLAGS);
+  return error;
 }
