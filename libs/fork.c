@@ -73,18 +73,7 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
   regs->pc = pc;
   regs->sp = 16 * PAGE_SIZE;
 
-  unsigned long copied_bytes = 0;
-  for (int i = 0; i < 16; i++) {
-    unsigned long virtual_address  = i * PAGE_SIZE;
-    unsigned long kernel_virtual_address = allocate_user_page(current_process, virtual_address);
-
-    if (copied_bytes < size) {
-      int bytes_to_copy = (size - copied_bytes > PAGE_SIZE) ? PAGE_SIZE : size - copied_bytes;
-      memcpy((void*)kernel_virtual_address, (void*)(start + copied_bytes), bytes_to_copy);
-
-      copied_bytes += bytes_to_copy;
-    }
-  }
+  copy_code(current_process, (void*)start, size);
 
   // I also need to map the addresses for MMIO to let the process communicate with the SD card
   int error = map_mmio_registers(current_process);
@@ -104,4 +93,19 @@ struct pt_regs *task_pt_regs(struct PCB *process) {
 int map_mmio_registers(struct PCB* process) {
   int error = map_sector(process, DEVICE_BASE, PHYS_MEMORY_SIZE - SECTION_SIZE, DEVICE_BASE, MMU_DEVICE_FLAGS);
   return error;
+}
+
+void copy_code(struct PCB* process, char* buffer, unsigned long size) {
+  unsigned long copied_bytes = 0;
+  for (int i = 0; i < 16; i++) {
+    unsigned long virtual_address  = i * PAGE_SIZE;
+    unsigned long kernel_virtual_address = allocate_user_page(process, virtual_address);
+
+    if (copied_bytes < size) {
+      int bytes_to_copy = (size - copied_bytes > PAGE_SIZE) ? PAGE_SIZE : size - copied_bytes;
+      memcpy((void*)kernel_virtual_address, (void*)(buffer + copied_bytes), bytes_to_copy);
+
+      copied_bytes += bytes_to_copy;
+    }
+  }
 }

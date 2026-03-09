@@ -231,12 +231,24 @@ int syscall_send_signal(int destination_pid, int signal_flag) {
 int syscall_exec(char* path) {
   int fd = syscall_open_file(path, FAT_READ);
 
-  char buffer[1024];
+  if (fd == -1) {
+    return -1;
+  }
+
+  char* buffer = (char*)allocate_kernel_page();
   int read_bytes;
   syscall_read_file(fd, buffer, 256, &read_bytes);
 
-  uart_puts(buffer);
-  uart_puts("\n");
+  copy_code(current_process, buffer, read_bytes);
+  current_process->cpu_context.pc = 0;
+  current_process->cpu_context.sp = 16 * PAGE_SIZE;
+  task_pt_regs(current_process)->registers[0] = 0;
+
+  // The return address is written at 16
+
+  // TODO clear user pages
+
+  syscall_close_file(fd);
 
   return 0;
 }

@@ -493,7 +493,9 @@ void handle_exec() {
   if (pid == 0) {
     call_syscall_write("[SON] I am the son.\n");
     call_syscall_exec("test.bin");
-    call_syscall_exit();
+    while (1) {
+      call_syscall_write("[SON] This line should never be printed.\n");
+    }
   } else {
     call_syscall_write("[FATHER] I am the father\n");
   }
