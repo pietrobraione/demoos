@@ -6,6 +6,7 @@
 #include "scheduler.h"
 #include "utils.h"
 #include "../common/string.h"
+#include "../common/syscalls_types.h"
 
 #define MAX_PATH 128
 
@@ -244,8 +245,6 @@ int syscall_exec(char* path) {
   current_process->cpu_context.sp = 16 * PAGE_SIZE;
   task_pt_regs(current_process)->registers[0] = 0;
 
-  // The return address is written at 16
-
   // TODO clear user pages
 
   syscall_close_file(fd);
@@ -262,3 +261,78 @@ void *const sys_call_table[] = {
     syscall_send_message,   syscall_receive_message,
     syscall_send_signal,    syscall_exec
 };
+
+void syscall_dispatcher(unsigned long* registers) {
+  unsigned long syscall_number = registers[8];
+
+  if (syscall_number > __NR_SYSCALLS) {
+    uart_puts("[KERNEL] Syscall number '");
+    uart_hex(syscall_number);
+    uart_puts("' not valid.\n");
+
+    return;
+  }
+
+  switch (syscall_number) {
+    case SYSCALL_WRITE_NUMBER:
+      syscall_write(registers[0]);
+      break;
+    case SYSCALL_MALLOC_NUMBER:
+      registers[0] = syscall_malloc();
+      break;
+    case SYSCALL_CLONE_NUMBER:
+      registers[0] = syscall_clone();
+      break;
+    case SYSCALL_EXIT_NUMBER:
+      syscall_exit();
+      break;
+    case SYSCALL_CREATE_DIR_NUMBER:
+      registers[0] = syscall_create_dir(registers[0]);
+      break;
+    case SYSCALL_OPEN_DIR_NUMBER:
+      registers[0] = syscall_open_dir(registers[0]);
+      break;
+    case SYSCALL_OPEN_FILE_NUMBER:
+      registers[0] = syscall_open_file(registers[0], registers[1]);
+      break;
+    case SYSCALL_CLOSE_FILE_NUMBER:
+      registers[0] = syscall_close_file(registers[0]);
+      break;
+    case SYSCALL_WRITE_FILE_NUMBER:
+      registers[0] = syscall_write_file(registers[0], registers[1], registers[2], registers[3]);
+      break;
+    case SYSCALL_READ_FILE_NUMBER:
+      registers[0] = syscall_read_file(registers[0], registers[1], registers[2], registers[3]);
+      break;
+    case SYSCALL_YIELD_NUMBER:
+      syscall_yield();
+      break;
+    case SYSCALL_INPUT_NUMBER:
+      registers[0] = syscall_input(registers[0], registers[1]);
+      break;
+    case SYSCALL_GET_NEXT_ENTRY_NUMBER:
+      registers[0] = syscall_get_next_entry(registers[0], registers[1]);
+      break;
+    case SYSCALL_FORK_NUMBER:
+      registers[0] = syscall_fork();
+      break;
+    case SYSCALL_SEND_MESSAGE_NUMBER:
+      registers[0] = syscall_send_message(registers[0], registers[1]);
+      break;
+    case SYSCALL_RECEIVE_MESSAGE_NUMBER:
+      syscall_receive_message(registers[0]);
+      break;
+    case SYSCALL_SEND_SIGNAL_NUMBER:
+      registers[0] = syscall_send_signal(registers[0], registers[1]);
+      break;
+    case SYSCALL_EXEC_NUMBER:
+      registers[0] = syscall_exec(registers[0]);
+      registers[21] = 0;
+      registers[23] = 0;
+      break;
+    default:
+      uart_puts("[KERNEL] Syscall number '");
+      uart_hex(syscall_number);
+      uart_puts("' not valid.\n");
+  }
+}

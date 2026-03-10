@@ -28,5 +28,7 @@ int syscall_exec(char* path);
 
 int syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info);
 
+void syscall_dispatcher(unsigned long* registers);
+
 #endif
 #endif

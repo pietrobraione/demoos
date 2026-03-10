@@ -497,6 +497,9 @@ void handle_exec() {
       call_syscall_write("[SON] This line should never be printed.\n");
     }
   } else {
-    call_syscall_write("[FATHER] I am the father\n");
+    while (1) {
+      call_syscall_write("[FATHER] I am the father\n");
+      call_syscall_yield();
+    }
   }
 }

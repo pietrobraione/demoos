@@ -187,12 +187,14 @@ stbl	.req	x27
 // Handle SVG generated from system calls
 el0_svc:
 	// First I load the systemcalls table and systemcall number
+	/*
 	adr		stbl, sys_call_table
 
 	uxtw	scno, w8
 	mov 	sc_nr, #__NR_SYSCALLS
 	// I enable interrupts
 	bl 		enable_irq
+	
 	// I check if my systemcall is <= the number of systemcalls
 	cmp		scno, sc_nr
 	b.hs	ni_sys
@@ -200,7 +202,18 @@ el0_svc:
 	// I obtain a pointer to the systemcall handler and execute it
 	ldr		x16, [stbl, scno, lsl #3]
 	blr		x16
+ 	
+	mov x0, scno
+	bl uart_hex
+	b		ret_from_syscall
+ 	*/
 
+	// I enable interrupts
+	
+	bl 		enable_irq
+
+	mov x0, sp
+	bl		syscall_dispatcher
 	b		ret_from_syscall
 
 ni_sys:
