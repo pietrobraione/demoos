@@ -21,8 +21,6 @@ void kernel_main() {
 
   irq_vector_init();
   uart_puts("[DONE] irq vector init\n");
-  timer_init();
-  uart_puts("[DONE] timer init\n");
   enable_interrupt_controller();
   uart_puts("[DONE] enable interrupt controller\n");
   enable_irq();
@@ -39,6 +37,9 @@ void kernel_main() {
   if (res < 0) {
       uart_puts("[ERROR] Cannot create kernel process.\n");
   }
+
+  timer_init();
+  uart_puts("[DONE] timer init\n");
 
   while (1) {}
 }

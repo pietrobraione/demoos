@@ -20,23 +20,20 @@ void preempt_disable() { current_process->preempt_disabled++; }
 void _schedule() {
   preempt_disable();
   long max_counter, next_process_index;
-  uart_puts("Inizio ricerca nuovo processo\n");
   while (1) {
     max_counter = -1;
     next_process_index = 0;
     for (int i = 0; i < N_PROCESSES; i++) {
       if (processes[i]) {
-        uart_puts("Process "); uart_hex(processes[i]->pid); uart_puts(" | State: "); uart_hex(processes[i]->state); uart_puts("\n");
         handle_process_signals(processes[i]);
         if (processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
-          uart_puts("Ho scelto "); uart_hex(i); uart_puts(" perché ha stato "); uart_hex(processes[i]->state); uart_puts("\n");
           max_counter = processes[i]->counter;
           next_process_index = i;
         }
       }
     }
 
-    if (max_counter > 0) {
+    if (max_counter > -1) {
       break;
     }
 
@@ -47,8 +44,6 @@ void _schedule() {
       }
     }
   }
-
-  uart_puts("Ricerca terminata.\n");
 
   struct PCB* next_process = processes[next_process_index];
   handle_process_signals(next_process);

@@ -18,7 +18,7 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
   struct PCB *new_process;
   new_process = (struct PCB *)allocate_kernel_page();
   if (!new_process) {
-    return 1;
+    return -1;
   }
 
   struct pt_regs *child_registers = task_pt_regs(new_process);
@@ -41,6 +41,7 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
     int error = map_mmio_registers(new_process);
     if (error) {
       uart_puts("[ERROR] Cannot map MMIO in process page tables\n");
+      return -1;
     }
  }
 
@@ -51,10 +52,6 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
   new_process->counter = current_process->priority;
   new_process->preempt_disabled = 1;
   new_process->pid = process_id;
-
-  uart_puts("Creo nuovo processo: ");
-  uart_hex(new_process->pid);
-  uart_puts("\n");
 
   // x19 and x20 will be used in the assembly to call the function
   new_process->cpu_context.pc = (unsigned long)ret_from_fork;
