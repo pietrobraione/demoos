@@ -105,25 +105,35 @@ int syscall_open_file(char *file_relative_path, uint8_t flags) {
     }
   }
 
-  File file;
-  int error = fat_file_open(&file, complete_path, flags);
+  File* file = (File*)allocate_kernel_page();
+  int error = fat_file_open(file, complete_path, flags);
   if (error) {
     return -1;
   }
 
   FatResource* fr = (FatResource*)allocate_kernel_page();
   fr->resource_type = RESOURCE_TYPE_FILE;
-  fr->f = &file;
+  fr->f = file;
   current_process->files[file_descriptor] = fr;
 
   return file_descriptor;
 }
 
 int syscall_close_file(int file_descriptor) {
+  if (file_descriptor < 0 || file_descriptor >= MAX_FILES_PER_PROCESS) {
+    return -1;
+  }
+
   FatResource *fat_resource = current_process->files[file_descriptor];
-  File *file = fat_resource->f;
-  int error = fat_file_close(file);
-  return error;
+  int error = fat_file_close(fat_resource->f);
+  if (error) {
+    return error;
+  }
+
+  free_page((unsigned long)fat_resource);
+  current_process->files[file_descriptor] = NULL;
+
+  return 0;
 }
 
 int syscall_write_file(int file_descriptor, char *buffer, int len, int *bytes) {
@@ -255,7 +265,7 @@ int syscall_exec(char* path) {
   current_process->cpu_context.sp = 16 * PAGE_SIZE;
   task_pt_regs(current_process)->registers[0] = 0;
 
-  // syscall_close_file(fd);
+  syscall_close_file(fd);
 
   return 0;
 }

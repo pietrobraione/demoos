@@ -41,8 +41,14 @@ unsigned long get_free_page() {
 }
 
 // Sets the given page as free
-void free_page(unsigned long p) {
-  memory_pages[(p - LOW_MEMORY) / PAGE_SIZE] = 0;
+int free_page(unsigned long page_kernel_address) {
+    if (page_kernel_address % PAGE_SIZE != 0) {
+        return -1;
+    }
+    memzero(page_kernel_address, PAGE_SIZE);
+    memory_pages[(page_kernel_address - VA_START - LOW_MEMORY) / PAGE_SIZE] = 0;
+
+    return 0;
 }
 
 

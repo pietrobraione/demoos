@@ -18,7 +18,7 @@
 #include "mm.h"
 
 unsigned long get_free_page();
-void free_page(unsigned long p);
+int free_page(unsigned long p);
 void map_page(struct PCB* process, unsigned long virtual_address, unsigned long page);
 int map_sector(struct PCB* process, unsigned long start_virtual_address, unsigned long end_virtual_address, unsigned long page_physical_address, unsigned long flags);
 

@@ -506,13 +506,12 @@ void handle_exec(char* buffer) {
     if (error) {
       call_syscall_write("[SHELL] Error running new process.\n");
       call_syscall_exit();
-      return;
     }
     
     while (1) {
       call_syscall_write("[SON] This line should never be printed.\n");
     }
   } else {
-
+    
   }
 }
