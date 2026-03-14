@@ -88,6 +88,7 @@ struct PCB {
   struct MessagesCircularBuffer messages_buffer;
 
   int pending_signals;
+  int pid_to_wait;
 };
 
 #define PROCESS_RUNNING 1
@@ -95,9 +96,10 @@ struct PCB {
 #define PROCESS_WAITING_UART_INPUT 3
 #define PROCESS_WAITING_TO_RECEIVE_MESSAGE 4
 #define PROCESS_WAITING_TO_SEND_MESSAGE 5
-#define PROCESS_STOPPED 6
+#define PROCESS_WAITING_ANOTHER_PROCESS 6
+#define PROCESS_STOPPED 7
 
-#define INIT_PROCESS {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, 1, 0, 0, 0, {}, {0, 0, {}, 0, {}}, {}, 0}
+#define INIT_PROCESS {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, 1, 0, 0, 0, {}, {0, 0, {}, 0, {}}, {}, 0, -1}
 
 extern struct PCB *current_process;
 extern struct PCB *processes[N_PROCESSES];

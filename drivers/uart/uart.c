@@ -5,6 +5,7 @@
 #include "../mbox/mbox.h"
 #include <stddef.h>
 
+struct PCB *uart_owner = NULL;
 char uart_buffer[UART_BUFFER_SIZE] = {0};
 int uart_head = 0;
 int uart_tail = 0;

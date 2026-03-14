@@ -124,6 +124,12 @@ call_syscall_exec:
     svc #0
     ret
 
+.globl call_syscall_wait
+call_syscall_wait:
+    mov w8, #SYSCALL_WAIT_NUMBER
+    svc #0
+    ret
+
 thread_start:
     mov x29, 0
     mov x0, x11

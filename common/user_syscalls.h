@@ -27,5 +27,6 @@ void call_syscall_receive_message(char* body);
 int call_syscall_send_signal(int destination_pid, int signal_flag);
 
 int call_syscall_exec(char* path);
+int call_syscall_wait(int pid);
 
 #endif

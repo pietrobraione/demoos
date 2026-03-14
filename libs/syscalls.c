@@ -26,7 +26,9 @@ unsigned long syscall_malloc() {
   return address;
 }
 
-void syscall_exit() { exit_process(); }
+void syscall_exit() {
+  exit_process();
+}
 
 int syscall_create_dir(char *dir_relative_path) {
   char complete_path[MAX_PATH];
@@ -151,9 +153,9 @@ int syscall_read_file(int file_descriptor, char *buffer, int len, int *bytes) {
   return error;
 }
 
-void syscall_yield() { schedule(); }
-
-struct PCB *uart_owner = NULL;
+void syscall_yield() {
+  schedule();
+}
 
 int syscall_input(char *buffer, int len) {
   int current_len = 0;
@@ -161,7 +163,7 @@ int syscall_input(char *buffer, int len) {
   while (uart_owner != NULL && uart_owner != current_process) {
     schedule();
   }
-
+  
   uart_owner = current_process;
 
   int max_len = (len > 0) ? len - 1 : 0;
@@ -246,7 +248,6 @@ int syscall_send_signal(int destination_pid, int signal_flag) {
 
 int syscall_exec(char* path) {
   int fd = syscall_open_file(path, FAT_READ);
-
   if (fd == -1) {
     return -1;
   }
@@ -266,6 +267,14 @@ int syscall_exec(char* path) {
   task_pt_regs(current_process)->registers[0] = 0;
 
   syscall_close_file(fd);
+
+  return 0;
+}
+
+int syscall_wait(int pid) {
+  current_process->state = PROCESS_WAITING_ANOTHER_PROCESS;
+  current_process->pid_to_wait = pid;
+  schedule();
 
   return 0;
 }
@@ -347,6 +356,9 @@ void syscall_dispatcher(unsigned long* registers) {
       registers[0] = syscall_exec((char*)registers[0]);
       registers[32] = 0;              // I reset the program counter
       registers[31] = 16 * PAGE_SIZE; // I reset the stack pointer
+      break;
+    case SYSCALL_WAIT_NUMBER:
+      registers[0] = syscall_wait((int)registers[0]);  
       break;
     default:
       uart_puts("[KERNEL] Syscall number '");

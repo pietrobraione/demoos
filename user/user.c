@@ -1,5 +1,5 @@
 #include "user.h"
-#include "user_syscalls.h"
+#include "../common/user_syscalls.h"
 #include "../common/string.h"
 #include "../common/memory.h"
 #include "../common/ipc_types.h"
@@ -31,7 +31,7 @@ void print_tree(const char *path, int depth);
 void normalize_path(char* path);
 void handle_fork_and_messages();
 void handle_signals();
-void handle_exec(char* buffer);
+void handle_exec(char* buffer, char* working_directory);
 
 void shell() {
   char working_directory[MAX_PATH_DIMENSION] = "/";
@@ -93,7 +93,7 @@ void shell() {
     } else if (memcmp(buffer, "signals", 7) == 0) {
       handle_signals();
     } else if (memcmp(buffer, "exec", 4) == 0) {
-      handle_exec(buffer);
+      handle_exec(buffer, working_directory);
     } else {
       call_syscall_write("[SHELL] Command '\0");
       call_syscall_write(buffer);
@@ -488,7 +488,7 @@ void handle_signals() {
   }
 }
 
-void handle_exec(char* buffer) {
+void handle_exec(char* buffer, char* working_directory) {
   char command[MAX_COMMAND_DIMENSION] = {0};
   char path[MAX_COMMAND_DIMENSION] = {0};
 
@@ -499,12 +499,16 @@ void handle_exec(char* buffer) {
     return;
   }
 
+  char complete_path[MAX_PATH_DIMENSION] = {0};
+  strcat(complete_path, working_directory);
+  strcat(complete_path, path);
+  normalize_path(complete_path);
   int pid = call_syscall_fork();
   if (pid == 0) {
     call_syscall_write("[SON] I am the son.\n");
-    int error = call_syscall_exec(path);
+    int error = call_syscall_exec(complete_path);
     if (error) {
-      call_syscall_write("[SHELL] Error running new process.\n");
+      call_syscall_write("[SON] Error running new process.\n");
       call_syscall_exit();
     }
     
@@ -512,6 +516,6 @@ void handle_exec(char* buffer) {
       call_syscall_write("[SON] This line should never be printed.\n");
     }
   } else {
-    
+    call_syscall_wait(pid);
   }
 }

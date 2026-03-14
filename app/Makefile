@@ -7,13 +7,13 @@ OBJCOPY := aarch64-elf-objcopy
 CFLAGS := -ffreestanding -nostdlib -nostartfiles
 LDFLAGS := -nostdlib
 
-all: test.bin
+all: calculator.bin
 
-test.bin: test.elf 
-	$(OBJCOPY) -O binary test.elf test.bin
+calculator.bin: calculator.elf 
+	$(OBJCOPY) -O binary calculator.elf calculator.bin
 
-test.elf: test.o user_syscalls.o
-	$(LD) -T test.ld test.o user_syscalls.o -o test.elf
+calculator.elf: calculator.o
+	$(LD) -T app.ld calculator.o ../common/user_syscalls.o -o calculator.elf
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -22,4 +22,4 @@ test.elf: test.o user_syscalls.o
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f test.bin test.elf test.o user_syscalls.o
+	rm -f calculator.bin calculator.elf calculator.o

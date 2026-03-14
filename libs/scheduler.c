@@ -113,6 +113,16 @@ void exit_process() {
   preempt_disable();
 
   current_process->state = PROCESS_ZOMBIE;
+  for (int i = 0; i < N_PROCESSES; i++) {
+    if (!processes[i]) {
+      continue;
+    }
+
+    if (processes[i]->state == PROCESS_WAITING_ANOTHER_PROCESS && processes[i]->pid_to_wait == current_process->pid) {
+      processes[i]->state = PROCESS_RUNNING;
+      processes[i]->pid_to_wait = -1;
+    }
+  }
 
   preempt_enable();
   schedule();
