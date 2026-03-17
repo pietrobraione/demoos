@@ -246,7 +246,7 @@ int syscall_send_signal(int destination_pid, int signal_flag) {
   return send_signal(destination_pid, signal_flag);
 }
 
-int syscall_exec(char* path) {
+int syscall_exec(char* path, unsigned long* trap_frame) {
   int fd = syscall_open_file(path, FAT_READ);
   if (fd == -1) {
     return -1;
@@ -266,6 +266,12 @@ int syscall_exec(char* path) {
   current_process->cpu_context.sp = 16 * PAGE_SIZE;
 
   syscall_close_file(fd);
+
+  trap_frame[32] = 0;              // I reset the program counter
+  trap_frame[31] = 16 * PAGE_SIZE; // I reset the stack pointer
+  trap_frame[0] = 100;
+  trap_frame[1] = 101;
+  trap_frame[2] = 102;
 
   return 0;
 }
@@ -342,12 +348,7 @@ void syscall_dispatcher(unsigned long* registers) {
       registers[0] = syscall_send_signal((int)registers[0], (int)registers[1]);
       break;
     case SYSCALL_EXEC_NUMBER:
-      registers[0] = syscall_exec((char*)registers[0]);
-      registers[32] = 0;              // I reset the program counter
-      registers[31] = 16 * PAGE_SIZE; // I reset the stack pointer
-      registers[0] = 100;
-      registers[1] = 101;
-      registers[2] = 102;
+      syscall_exec((char*)registers[0], registers);
       break;
     case SYSCALL_WAIT_NUMBER:
       registers[0] = syscall_wait((int)registers[0]);  

@@ -32,6 +32,7 @@ void normalize_path(char* path);
 void handle_fork_and_messages();
 void handle_signals();
 void handle_exec(char* buffer, char* working_directory);
+void handle_exec_from_bin(char* buffer);
 
 void shell() {
   char working_directory[MAX_PATH_DIMENSION] = "/";
@@ -95,9 +96,7 @@ void shell() {
     } else if (memcmp(buffer, "exec", 4) == 0) {
       handle_exec(buffer, working_directory);
     } else {
-      call_syscall_write("[SHELL] Command '\0");
-      call_syscall_write(buffer);
-      call_syscall_write("' not found.\n\0");
+      handle_exec_from_bin(buffer);
     }
   }
 
@@ -519,3 +518,25 @@ void handle_exec(char* buffer, char* working_directory) {
     call_syscall_wait(pid);
   }
 }
+
+void handle_exec_from_bin(char* buffer) {
+  char complete_path[MAX_PATH_DIMENSION] = {0};
+  strcat(complete_path, "/bin/");
+  strcat(complete_path, buffer);
+  strcat(complete_path, ".bin");
+  normalize_path(complete_path);
+
+  int pid = call_syscall_fork();
+  if (pid == 0) {
+    int error = call_syscall_exec(complete_path);
+    if (error) {
+      call_syscall_write("[SHELL] Cannot find '");
+      call_syscall_write(buffer);
+      call_syscall_write("' binary file.\n");
+      call_syscall_exit();
+    }
+  } else {
+    call_syscall_wait(pid);
+  }
+}
+

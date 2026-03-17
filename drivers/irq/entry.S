@@ -74,6 +74,7 @@
 	ldp	x24, x25, [sp, #16 * 12]
 	ldp	x26, x27, [sp, #16 * 13]
 	ldp	x28, x29, [sp, #16 * 14]
+
 	add	sp, sp, #S_FRAME_SIZE
 	eret
 	.endm
@@ -197,8 +198,6 @@ ni_sys:
 
 ret_from_syscall:
 	bl			disable_irq
-	// I save the value of x0 in the stack
-	str			x0, [sp, #S_X0]
 	kernel_exit	0
 
 el0_da:
