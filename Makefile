@@ -33,7 +33,9 @@ COM_S_SRCS  := $(wildcard common/*.S)
 APP_COM_OBJS := $(COM_C_SRCS:.c=.app.o) $(COM_S_SRCS:.S=.app.o)
 
 # Targets
-all: kernel8.img
+all: kernel apps
+
+kernel: kernel8.img
 
 kernel8.img: kernel8.elf
 	$(OBJCOPY) -O binary $< $@
@@ -63,6 +65,7 @@ clean:
 	rm -f kernel8.elf kernel8.img $(OBJS) ./app/*.bin
 
 apps: $(APP_BINS)
+	./copy-bin-to-sd.sh
 
 app/%.bin: app/%.elf
 	$(OBJCOPY) -O binary $< $@

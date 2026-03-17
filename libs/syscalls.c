@@ -264,7 +264,6 @@ int syscall_exec(char* path) {
   copy_code(current_process, buffer, read_bytes);
   current_process->cpu_context.pc = 0;
   current_process->cpu_context.sp = 16 * PAGE_SIZE;
-  task_pt_regs(current_process)->registers[0] = 0;
 
   syscall_close_file(fd);
 
@@ -278,16 +277,6 @@ int syscall_wait(int pid) {
 
   return 0;
 }
-
-void *const sys_call_table[] = {
-    syscall_write,          syscall_malloc,     syscall_clone,
-    syscall_exit,           syscall_create_dir, syscall_open_dir,
-    syscall_open_file,      syscall_close_file, syscall_write_file,
-    syscall_read_file,      syscall_yield,      syscall_input,
-    syscall_get_next_entry, syscall_fork,
-    syscall_send_message,   syscall_receive_message,
-    syscall_send_signal,    syscall_exec
-};
 
 void syscall_dispatcher(unsigned long* registers) {
   unsigned long syscall_number = registers[8];
@@ -356,6 +345,9 @@ void syscall_dispatcher(unsigned long* registers) {
       registers[0] = syscall_exec((char*)registers[0]);
       registers[32] = 0;              // I reset the program counter
       registers[31] = 16 * PAGE_SIZE; // I reset the stack pointer
+      registers[0] = 100;
+      registers[1] = 101;
+      registers[2] = 102;
       break;
     case SYSCALL_WAIT_NUMBER:
       registers[0] = syscall_wait((int)registers[0]);  
