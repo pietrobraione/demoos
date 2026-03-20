@@ -12,7 +12,7 @@
 #include "../common/syscalls_types.h"
 
 void syscall_write(char* buffer);
-void syscall_write_number(int number);
+void syscall_write_hex(int number);
 int syscall_copy_process();
 int syscall_create_dir(char* dir_relative_path);
 int syscall_open_dir(const char* dir_relative_path);

@@ -16,7 +16,7 @@ void syscall_write(char *buffer) {
   uart_puts((char*)kernel_buffer);
 }
 
-void syscall_write_number(int number) {
+void syscall_write_hex(int number) {
   uart_hex(number);
 }
 
@@ -261,12 +261,14 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
   syscall_read_file(fd, buffer, PAGE_SIZE, &read_bytes);
   syscall_close_file(fd);
 
-  /*
   for (int i = 0; i < current_process->mm.n_user_pages; i++) {
     unsigned long user_page = current_process->mm.user_pages[i].physical_address + VA_START;
     free_page(user_page);
+
+    current_process->mm.n_user_pages--;
+    current_process->mm.user_pages[i].physical_address = 0;
+    current_process->mm.user_pages[i].virtual_address = 0;
   }
-  */
   copy_code(current_process, buffer, read_bytes);
 
   // Now I have to save the arguments from the shell to the new user memory
@@ -311,8 +313,8 @@ void syscall_dispatcher(unsigned long* registers) {
     case SYSCALL_WRITE_NUMBER:
       syscall_write((char*)registers[0]);
       break;
-    case SYSCALL_WRITE_NUMBER_NUMBER:
-      syscall_write_number((int)registers[0]);
+    case SYSCALL_WRITE_HEX_NUMBER:
+      syscall_write_hex((int)registers[0]);
       break;
     case SYSCALL_MALLOC_NUMBER:
       registers[0] = syscall_malloc();

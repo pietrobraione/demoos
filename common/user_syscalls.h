@@ -6,7 +6,7 @@
 #include "../common/syscalls_types.h"
 
 void call_syscall_write(char* buffer);
-void call_syscall_write_number(int number);
+void call_syscall_write_hex(int number);
 unsigned long call_syscall_malloc();
 int call_syscall_clone(unsigned long function, unsigned long argument, unsigned long stack);
 void call_syscall_exit();

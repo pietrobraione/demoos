@@ -12,7 +12,7 @@ call_syscall_write:
 
 .globl call_syscall_write_number
 call_syscall_write_number:
-    mov w8, #SYSCALL_WRITE_NUMBER_NUMBER
+    mov w8, #SYSCALL_WRITE_HEX_NUMBER
     svc #0
     ret
 
