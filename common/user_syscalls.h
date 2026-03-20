@@ -3,8 +3,10 @@
 
 #include "../common/ipc_types.h"
 #include "../common/fat_types.h"
+#include "../common/syscalls_types.h"
 
 void call_syscall_write(char* buffer);
+void call_syscall_write_number(int number);
 unsigned long call_syscall_malloc();
 int call_syscall_clone(unsigned long function, unsigned long argument, unsigned long stack);
 void call_syscall_exit();
@@ -26,7 +28,7 @@ void call_syscall_receive_message(char* body);
 
 int call_syscall_send_signal(int destination_pid, int signal_flag);
 
-int call_syscall_exec(char* path, int n_arguments, char* arguments[]);
+int call_syscall_exec(char* path, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]);
 int call_syscall_wait(int pid);
 
 #endif

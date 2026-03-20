@@ -10,6 +10,12 @@ call_syscall_write:
     svc #0
     ret
 
+.globl call_syscall_write_number
+call_syscall_write_number:
+    mov w8, #SYSCALL_WRITE_NUMBER_NUMBER
+    svc #0
+    ret
+
 .globl call_syscall_clone
 call_syscall_clone:
     // First I save the arguments for the child process

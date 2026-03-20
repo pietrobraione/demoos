@@ -1,7 +1,7 @@
 #ifndef __SYSCALLS_H
 #define __SYSCALLS_H
 
-#define __NR_SYSCALLS 19
+#define SYSCALLS_NUMBER 20
 
 #ifndef __ASSEMBLER__
 
@@ -9,8 +9,10 @@
 #include "./ipc.h"
 #include "../common/ipc_types.h"
 #include "../common/fat_types.h"
+#include "../common/syscalls_types.h"
 
 void syscall_write(char* buffer);
+void syscall_write_number(int number);
 int syscall_copy_process();
 int syscall_create_dir(char* dir_relative_path);
 int syscall_open_dir(const char* dir_relative_path);
@@ -24,7 +26,7 @@ int syscall_fork();
 int syscall_send_message(int destination_pid, char* body);
 void syscall_receive_message(char* body);
 int syscall_send_signal(int destination_pid, int signal_flag);
-int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][256]);
+int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]);
 
 int syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info);
 

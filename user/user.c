@@ -3,6 +3,7 @@
 #include "../common/string.h"
 #include "../common/memory.h"
 #include "../common/ipc_types.h"
+#include "../common/syscalls_types.h"
 
 #define UART_NORMAL_COLOR "\x1B[0m\0"
 #define UART_RED_COLOR "\x1B[31m\0"
@@ -521,7 +522,9 @@ void handle_exec(char* buffer, char* working_directory) {
 
 void handle_exec_from_bin(char* buffer) {
   char file_name[MAX_PATH_DIMENSION] = {0};
+  memzero(file_name, MAX_PATH_DIMENSION);
   char arguments_raw[MAX_PATH_DIMENSION] = {0};
+  memzero(arguments_raw, MAX_PATH_DIMENSION);
 
   strsplit(buffer, ' ', file_name, arguments_raw);
 
@@ -533,11 +536,15 @@ void handle_exec_from_bin(char* buffer) {
 
   int n_arguments = 0;
   char arguments[MAX_EXEC_ARGUMENTS][MAX_PATH_DIMENSION];
+  memzero(arguments, MAX_EXEC_ARGUMENTS * MAX_PATH_DIMENSION);
 
   while (strlen(arguments_raw) > 0 && n_arguments < MAX_EXEC_ARGUMENTS) {
-    char temp[MAX_PATH_DIMENSION] = {0};
+    char temp[] = {0};
+    memzero(temp, SYSCALL_EXEC_ARGUMENT_DIMENSION);
 
-    char argument[MAX_PATH_DIMENSION] = {0};
+    char argument[SYSCALL_EXEC_ARGUMENT_DIMENSION] = {0};
+    memzero(temp, SYSCALL_EXEC_ARGUMENT_DIMENSION);
+
     strsplit(arguments_raw, ' ', arguments[n_arguments], temp);
 
     n_arguments++;

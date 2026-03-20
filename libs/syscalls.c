@@ -16,6 +16,10 @@ void syscall_write(char *buffer) {
   uart_puts((char*)kernel_buffer);
 }
 
+void syscall_write_number(int number) {
+  uart_hex(number);
+}
+
 int syscall_clone() { return copy_process(0, 0, 0); }
 
 unsigned long syscall_malloc() {
@@ -246,7 +250,7 @@ int syscall_send_signal(int destination_pid, int signal_flag) {
   return send_signal(destination_pid, signal_flag);
 }
 
-int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][256]) {
+int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]) {  
   int fd = syscall_open_file(path, FAT_READ);
   if (fd == -1) {
     return -1;
@@ -257,12 +261,21 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
   syscall_read_file(fd, buffer, PAGE_SIZE, &read_bytes);
   syscall_close_file(fd);
 
+  /*
+  for (int i = 0; i < current_process->mm.n_user_pages; i++) {
+    unsigned long user_page = current_process->mm.user_pages[i].physical_address + VA_START;
+    free_page(user_page);
+  }
+  */
+  copy_code(current_process, buffer, read_bytes);
+
   // Now I have to save the arguments from the shell to the new user memory
   trap_frame[0] = n_arguments;
   unsigned long stack_pointer = 16 * PAGE_SIZE;
   for (int i = 0; i < n_arguments; i++) {
-    stack_pointer -= 256;
-    memcpy((unsigned long*)stack_pointer, arguments[i], 256);
+    stack_pointer -= SYSCALL_EXEC_ARGUMENT_DIMENSION;
+    unsigned long* stack_pointer_kernel_address = user_to_kernel_address(stack_pointer);
+    strcpy((unsigned long*)stack_pointer_kernel_address, arguments[i]);
     trap_frame[i + 1] = stack_pointer;
   }
   
@@ -271,13 +284,7 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
 
   trap_frame[31] = stack_pointer;  // I reset the stack pointer
   trap_frame[32] = 0;              // I reset the program counter
-
-  for (int i = 0; i < current_process->mm.n_user_pages; i++) {
-    unsigned long user_page = current_process->mm.user_pages[i].physical_address + VA_START;
-    memset((void*)user_page, 0, PAGE_SIZE);
-  }
-  copy_code(current_process, buffer, read_bytes);
-
+  
   return 0;
 }
 
@@ -292,7 +299,7 @@ int syscall_wait(int pid) {
 void syscall_dispatcher(unsigned long* registers) {
   unsigned long syscall_number = registers[8];
 
-  if (syscall_number > __NR_SYSCALLS) {
+  if (syscall_number > SYSCALLS_NUMBER) {
     uart_puts("[KERNEL] Syscall number '");
     uart_hex(syscall_number);
     uart_puts("' not valid.\n");
@@ -303,6 +310,9 @@ void syscall_dispatcher(unsigned long* registers) {
   switch (syscall_number) {
     case SYSCALL_WRITE_NUMBER:
       syscall_write((char*)registers[0]);
+      break;
+    case SYSCALL_WRITE_NUMBER_NUMBER:
+      syscall_write_number((int)registers[0]);
       break;
     case SYSCALL_MALLOC_NUMBER:
       registers[0] = syscall_malloc();
@@ -353,7 +363,7 @@ void syscall_dispatcher(unsigned long* registers) {
       registers[0] = syscall_send_signal((int)registers[0], (int)registers[1]);
       break;
     case SYSCALL_EXEC_NUMBER:
-      char* kernel_arguments = (unsigned long*)user_to_kernel_address(registers[2]);
+      char (*kernel_arguments)[SYSCALL_EXEC_ARGUMENT_DIMENSION] = (char(*)[SYSCALL_EXEC_ARGUMENT_DIMENSION])user_to_kernel_address(registers[2]);
       syscall_exec((char*)registers[0], registers, (int)registers[1], kernel_arguments);
       break;
     case SYSCALL_WAIT_NUMBER:
