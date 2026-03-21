@@ -10,28 +10,10 @@ call_syscall_write:
     svc #0
     ret
 
-.globl call_syscall_write_number
-call_syscall_write_number:
+.globl call_syscall_write_hex
+call_syscall_write_hex:
     mov w8, #SYSCALL_WRITE_HEX_NUMBER
     svc #0
-    ret
-
-.globl call_syscall_clone
-call_syscall_clone:
-    // First I save the arguments for the child process
-    // because the handler called later overwrites them
-    mov x10, x0     // Function
-    mov x11, x1     // Argument
-    mov x12, x2     // Stack
-
-    // I call the syscall handler for the clone
-    mov x0, x2
-    mov w8, #SYSCALL_CLONE_NUMBER
-    svc 0x0
-    cmp x0, #0
-    // If the syscall return 0, we are inside the new thread and we need to
-    // start it
-    beq thread_start
     ret
 
 .globl call_syscall_malloc

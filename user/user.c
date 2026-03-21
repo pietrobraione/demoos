@@ -134,7 +134,7 @@ void handle_ls(char *buffer, char *working_directory) {
   while (1) {
       memset(info.name, 0, FAT_MAX_NAME_SIZE);
       int result = call_syscall_get_next_entry(fd, &info);
-      if (result != 1) {
+      if (result) {
           break;
       }
 
@@ -516,7 +516,12 @@ void handle_exec(char* buffer, char* working_directory) {
       call_syscall_write("[SON] This line should never be printed.\n");
     }
   } else {
-    call_syscall_wait(pid);
+    int ok = call_syscall_wait(pid);
+    if (ok) {
+      call_syscall_write("[SHELL] Cannot find process '");
+      call_syscall_write_hex(pid);
+      call_syscall_write("'\n");
+    }
   }
 }
 
@@ -562,6 +567,11 @@ void handle_exec_from_bin(char* buffer) {
       call_syscall_exit();
     }
   } else {
-    call_syscall_wait(pid);
+    int ok = call_syscall_wait(pid);
+    if (ok) {
+      call_syscall_write("[SHELL] Cannot find process '");
+      call_syscall_write_hex(pid);
+      call_syscall_write("'\n");
+    }
   }
 }

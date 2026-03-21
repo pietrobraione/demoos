@@ -1,7 +1,7 @@
 #ifndef __SYSCALLS_H
 #define __SYSCALLS_H
 
-#define SYSCALLS_NUMBER 20
+#define SYSCALLS_NUMBER 19
 
 #ifndef __ASSEMBLER__
 

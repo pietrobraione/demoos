@@ -230,7 +230,7 @@ int syscall_get_next_entry(int file_descriptor, FatEntryInfo *entry_info) {
     return -1;
   }
 
-  return 1;
+  return 0;
 }
 
 int syscall_fork() {
@@ -291,6 +291,17 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
 }
 
 int syscall_wait(int pid) {
+  int is_pid_found = 0;
+  for (int i = 0; i < N_PROCESSES; i++) {
+    if (processes[i]->pid == pid) {
+      is_pid_found = 1;
+    }
+  }
+
+  if (!is_pid_found) {
+    return -1;
+  }
+
   current_process->state = PROCESS_WAITING_ANOTHER_PROCESS;
   current_process->pid_to_wait = pid;
   schedule();
@@ -318,9 +329,6 @@ void syscall_dispatcher(unsigned long* registers) {
       break;
     case SYSCALL_MALLOC_NUMBER:
       registers[0] = syscall_malloc();
-      break;
-    case SYSCALL_CLONE_NUMBER:
-      registers[0] = syscall_clone();
       break;
     case SYSCALL_EXIT_NUMBER:
       syscall_exit();

@@ -197,9 +197,13 @@ A process can also send signals to another process. There are 3 types of signals
 - Stop: stops the process execution until a Resume message is sent
 - Resume: resumes the execution of a stopped process
 
-Signals are non blocking and handled entirely by the kernel, in fact for the moment it's not 
-possible to define custom handlers for the signals. Furthermore, there is no control about who can
-send signals to other processes; for example, the son of a process can kill its father process. 
+Signals are non blocking and handled entirely by the kernel, in fact for the 
+moment it's not possible to define custom handlers for the signals. Furthermore,
+there is no control about who can send signals to other processes; for example, 
+the son of a process can kill its father process. 
+
+Signals are handled by assigning a flag in the process PCB; everytime the 
+scheduler is invoked, each process signals are processed and the flag is reset. 
 
 ## System calls
 
@@ -223,31 +227,46 @@ Let's see the flow of a system call invocation from the user process:
 - This function prints on the UART the passed text
 - Then, kernel exits and the control returns to the process
 
-#### IO
+### UART
 
-| Function name                                                                | Description |
-| -------------                                                                | ----------- |
-| `syscall_write(char* buffer)`                                                | Writes the given buffer into the UART |
-| `syscall_input(char* buffer, int len)`                                       | Reads a buffer from the UART and stores it in the passed buffer |
-| `syscall_create_dir(char* dir_path)`                                         | Creates a new directory in the filesystem and returns its file descriptor |
-| `syscall_open_dir(char dir_path*)`                                           | Opens the given directory and returns its file descriptor |
-| `syscall_open_file(char* file_path, uint8_t flags)`                          | Opens the given file and returns its file descriptor |
-| `syscall_close_file(int file_descriptor)`                                    | Closes the file with the given file descriptor 
-| `syscall_write_file(int file_descriptor, char* buffer, int len, int* bytes)` | Writes the given content in the file with the given file descriptor; bytes will be the number of written bytes |
-| `syscall_read_file(int file_descriptor, char* buffer, int len, int* bytes)`  | Reads the content of the open file with the given descriptor and puts it into the given buffer; bytes will be the number of read bytes |
-| `syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info)`      | Saves into `entry_info` the info about the entry, and then increases the pointer in the directory |
+| Function name                                                                | Description | Return |
+| -------------                                                                | ----------- | - |
+| `void call_syscall_write(char* buffer)`                                           | Writes the given buffer into the UART | Nothing |
+| `void call_syscall_write_hex(int number)`                                         | Writes the given number into the UART in the hexadecimal representation | Nothing |
+| `void call_syscall_input(char* buffer, int len)`                                  | Reads a buffer from the UART and stores it in the passed buffer; the buffer will be filled until the given dimension is reached, or until the first termination character (`\n`, `\r`, `\0`) | Nothing |
 
-#### Memory
+### Filesystem
 
-| Function name                          | Description |
-| -------------                          | ----------- |
-| `syscall_malloc()`                     | Gets the first free page and allocates it for the kernel; returns the kernel address of the page |
+| Function name                                                                    | Description | Return |
+| -------------                                                                    | ----------- | - |
+| `int call_syscall_create_dir(char* dir_path)`                                    | Creates a new directory in the filesystem | File descriptor of the folder; `-1` if an error occoured |
+| `int call_syscall_open_dir(char dir_path*)`                                      | Opens the given directory | File descriptor of the folder; `-1` if an error occoured |
+| `int call_syscall_open_file(char* file_path, uint8_t flags)`                          | Opens the given file | File descriptor of the file; `-1` if an error occoured |
+| `int call_syscall_close_file(int file_descriptor)`                                    | Closes the file with the given file descriptor | `0` if the file is closed correctly; `-1` if an error occoured |
+| `int call_syscall_write_file(int file_descriptor, char* buffer, int len, int* bytes)` | Writes the given content in the file with the given file descriptor; bytes will be the number of written bytes | `0` if the operation is successful, `-1` otherwhise |
+| `int call_syscall_read_file(int file_descriptor, char* buffer, int len, int* bytes)`  | Reads the content of the open file with the given descriptor and puts it into the given buffer; bytes will be the number of read bytes | `0` if the operation is successful, `-1` otherwhise |
+| `int call_syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info)`      | Saves into `entry_info` the info about the entry, and then increases the pointer in the directory | `0` if the operation is successful, `-1` otherwhise |
 
-#### Process
+### Memory
 
-| Function name     | Description |
-| -------------     | ----------- |
-| `syscall_exit()`  | Terminates the current process |
-| `syscall_fork()`  | Creates a copy of the current process and returns its PID |
-| `syscall_yield()` | Forces the scheduler to assign the CPU to a new process |
-| `syscall_send_message(int destination_pid, char* body)` | Sends a message to another process |
+| Function name                                             | Description | Return |
+| -------------                                             | ----------- | - |
+| `unsigned long call_syscall_malloc()`                     | Gets the first free page and allocates it for the kernel | The kernel address of the allocated page; `-1` if an error occoured  |
+
+### Process
+
+| Function name                                                                                           | Description | Return |
+| -------------                                                                                           | ----------- | - |
+| `void call_syscall_exit()`                                                                              | Terminates the current process | Nothing |
+| `int call_syscall_fork()`                                                                                   | Creates a copy (both code and data) of the current process | The PID of the new process; `-1` if an error occoured  |
+| `void call_syscall_yield()`                                                                             | Forces the scheduler to assign the CPU to a new process | Nothing |
+| `int call_syscall_exec(char* path, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION])` | Substitutes the current process code segment with the one in the given file path | `0` if the operation is successful; `-1` if an error occoured |
+| `int call_syscall_wait(int pid)`                                                                       | The process is put in waiting untill the desired process invokes the `call_syscall_exit` systemcall | `0` if the operation is successful; `-1` if the `pid` doesn't exist |
+
+#### IPC
+
+| Function name                                                                                           | Description | Return |
+| -------------                                                                                           | ----------- | - |
+| `int call_syscall_send_message(int destination_pid, char* body)`                                        | Sends a message to another process | `0` if the message has been sent; `-1` if an error occoured |
+| `void call_syscall_send_message(char* body)`                                                            | Reads the first message arrived to the process, and puts it into `body` | Nothing |
+| `int call_syscall_send_signal(int destination_pid, int signal_flag)`                                    | Sends a signal to the desired process | `0` if the signal has been sent; `-1` if an error occoured |
