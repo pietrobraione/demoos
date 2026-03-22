@@ -1,5 +1,5 @@
 #include "controller.h"
-#include "../../libs/mmio.h"
+#include "../../arch/mmio.h"
 #include "../timer/timer.h"
 #include "../uart/uart.h"
 

@@ -14,6 +14,7 @@
 int copy_process(unsigned long, unsigned long, unsigned long);
 int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc);
 void copy_code(struct PCB* process, char* buffer, unsigned long size);
+extern void cpu_switch_to_process(struct PCB *, struct PCB *);
 
 struct pt_regs* task_pt_regs(struct PCB*);
 

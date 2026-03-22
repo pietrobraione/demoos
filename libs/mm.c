@@ -1,4 +1,3 @@
-#include "allocator.h"
 #include "mm.h"
 #include "scheduler.h"
 #include "../arch/mmu.h"

@@ -1,7 +1,7 @@
 #include "ipc.h"
 #include "scheduler.h"
 #include "../drivers/uart/uart.h"
-#include "./allocator.h"
+#include "./mm.h"
 #include "../common/string.h"
 #include <stddef.h>
 

@@ -1,7 +1,7 @@
 #include "scheduler.h"
 #include "../drivers/irq/controller.h"
-#include "allocator.h"
-#include "cpu_switch.h"
+#include "mm.h"
+#include "fork.h"
 
 // First I create the init process which is the first one running
 static struct PCB init_process = INIT_PROCESS;

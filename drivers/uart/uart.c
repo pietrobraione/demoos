@@ -1,5 +1,5 @@
 #include "uart.h"
-#include "../../libs/mmio.h"
+#include "../../arch/mmio.h"
 #include "../../libs/scheduler.h"
 #include "../../libs/utils.h"
 #include "../mbox/mbox.h"

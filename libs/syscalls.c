@@ -1,7 +1,7 @@
 #include "syscalls.h"
 #include "../drivers/uart/uart.h"
 #include "./fat32/fat.h"
-#include "allocator.h"
+#include "mm.h"
 #include "fork.h"
 #include "scheduler.h"
 #include "utils.h"

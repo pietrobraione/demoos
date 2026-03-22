@@ -3,7 +3,7 @@
 #include "fork.h"
 #include "../drivers/irq/entry.h"
 #include "../drivers/uart/uart.h"
-#include "allocator.h"
+#include "mm.h"
 #include "scheduler.h"
 #include "../common/memory.h"
 

@@ -1,5 +1,5 @@
 #include "timer.h"
-#include "../../libs/mmio.h"
+#include "../../arch/mmio.h"
 #include "../../libs/scheduler.h"
 
 const unsigned int interval = 200000;

@@ -2,7 +2,7 @@
 #define __MMIO_H
 
 #include <stdint.h>
-#include "./mm.h"
+#include "../libs/mm.h"
 
 #define MMIO_BASE (VA_START + 0x3F000000)
 

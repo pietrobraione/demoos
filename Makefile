@@ -41,7 +41,7 @@ kernel8.img: kernel8.elf
 	$(OBJCOPY) -O binary $< $@
 
 kernel8.elf: $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -T script/link.ld -o $@
+	$(LD) $(LDFLAGS) $(OBJS) -T linker/link.ld -o $@
 
 # Pattern rules
 libs/fat32/%.o: CFLAGS += -w    # I ignore warnings beacause it is a submodule
@@ -65,7 +65,7 @@ clean:
 	rm -f kernel8.elf kernel8.img $(OBJS) ./app/*.bin ./app/*.o ./app/*.elf
 
 apps: $(APP_BINS)
-	./copy-bin-to-sd.sh
+	./scripts/copy-bin-to-sd.sh
 
 app/%.bin: app/%.elf
 	$(OBJCOPY) -O binary $< $@
@@ -82,3 +82,6 @@ common/%.app.o: common/%.c
 
 common/%.app.o: common/%.S
 	$(CC) $(APP_CFLAGS) -c $< -o $@
+
+sd:
+	./scripts/create-sd-image.sh
