@@ -5,19 +5,9 @@
 #include "../common/string.h"
 #include <stddef.h>
 
-int send_message(struct PCB* source_process, int destination_process_pid, char* body) {
+// Sends a message from a process to another one
+int send_message(struct PCB* source_process, struct PCB* destination_process, char* body) {
     struct Message message;
-
-    struct PCB* destination_process = NULL;
-    for (int i = 0; i < n_processes; i++) {
-        if (processes[i]->pid == destination_process_pid) {
-            destination_process = processes[i];
-        }
-    }
-
-    if (destination_process == NULL) {
-        return -1;
-    }
     
     message.source_process = current_process;
     message.destination_process = destination_process;
@@ -35,6 +25,7 @@ int send_message(struct PCB* source_process, int destination_process_pid, char* 
     return 0;
 }
 
+// Blocks the process until it receives a message, and puts its content in body
 void receive_message(struct PCB* destination_process, char* body) {
     struct Message received_message;
 
@@ -56,7 +47,7 @@ void receive_message(struct PCB* destination_process, char* body) {
     }
 }
 
-// Pushes a message in the given circular buffer; return -1 if an error occoured
+// Pushes a message in the given circular buffer
 int push_message(struct MessagesCircularBuffer* buffer, struct Message* message) {
     int next_head = buffer->head + 1;
     if (next_head >= MAX_MESSAGES_PER_PROCESS) {
@@ -80,7 +71,7 @@ int push_message(struct MessagesCircularBuffer* buffer, struct Message* message)
     return 0;
 }
 
-// Pops the next message from the queue and puts in it message; returns -1 if an error occoured
+// Pops the next message from the queue and puts in it message
 int pop_message(struct MessagesCircularBuffer* buffer, struct Message* message) {
     if (buffer->head == buffer->tail) {
         // The buffer is empty
@@ -113,18 +104,8 @@ void print_circular_buffer(struct MessagesCircularBuffer* buffer) {
     }
 }
 
-int send_signal(int destination_process_pid, int signal_flag) {
-    struct PCB* destination_process = NULL;
-    for (int i = 0; i < n_processes; i++) {
-        if (processes[i]->pid == destination_process_pid) {
-            destination_process = processes[i];
-        }
-    }
-
-    if (destination_process == NULL) {
-        return -1;
-    }
-
+// Sets the given flag in the given process signals
+int send_signal(struct PCB* destination_process, int signal_flag) {
     destination_process->pending_signals |= (1 << signal_flag);
 
     return 0;

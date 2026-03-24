@@ -7,8 +7,10 @@
 unsigned long map_table(unsigned long* table, unsigned long index_shift, unsigned long virtual_address, int* new_table_entry_created);
 void map_table_entry(unsigned long* pte, unsigned long virtual_address, unsigned long page_physical_address);
 
+// Array which tells if each page is free (0) or not (1)
 static unsigned short memory_pages[N_PAGES] = {0};
 
+// Returns the first free page kernel address
 unsigned long allocate_kernel_page() {
     unsigned long page = get_free_page();
     if (page == 0) {
@@ -17,6 +19,7 @@ unsigned long allocate_kernel_page() {
     return page + VA_START;
 }
 
+// Returns the first free page kernel address, and maps the page in the process page tables
 unsigned long allocate_user_page(struct PCB* process, unsigned long virtual_address) {
     unsigned long page = get_free_page();
     if (page == 0) {
@@ -39,7 +42,7 @@ unsigned long get_free_page() {
   return 0;
 }
 
-// Sets the given page as free
+// Cleans the page content and sets the page as free
 int free_page(unsigned long page_kernel_address) {
     if (page_kernel_address % PAGE_SIZE != 0) {
         return -1;
@@ -50,7 +53,7 @@ int free_page(unsigned long page_kernel_address) {
     return 0;
 }
 
-
+// Maps the given virtual address in the given physical address in the process page tables
 void map_page(struct PCB* process, unsigned long virtual_address, unsigned long page_physical_address) {
     // If the process doesn't have a PGD, I create it in a free page
     if (!process->mm.pgd) {
@@ -157,7 +160,9 @@ int map_sector(struct PCB* process, unsigned long start_virtual_address, unsigne
 
 static int index = -1;
 
-// This function handles the page fault exceptions
+// Handles the page fault exceptions
+// Important: since each process page is mapped when process is created, this function should never
+// be called
 int do_mem_abort(unsigned long address, unsigned long esr) {
     unsigned long dfs = (esr & 0b111111);
     if ((dfs / 0b111100) == 0b100) {
@@ -175,7 +180,8 @@ int do_mem_abort(unsigned long address, unsigned long esr) {
     return -1;
 }
 
-// Converts the virtual address of the current process in the corresponding physical address
+// Converts the virtual address of the current process in the corresponding physical address using
+// the current process page tables
 unsigned long user_to_kernel_address(unsigned long user_virtual_address) {
     unsigned long* pgd = (unsigned long*)(current_process->mm.pgd + VA_START);
 
@@ -207,6 +213,7 @@ unsigned long user_to_kernel_address(unsigned long user_virtual_address) {
     return (page_physical_address & PAGE_MASK) + page_offset + VA_START;
 }
 
+// Creates a copy of all the current process pages to another process
 int copy_virtual_memory(struct PCB* destination_process) {
     struct PCB* source_process = current_process;
     for (int i = 0; i < source_process->mm.n_user_pages; i++) {

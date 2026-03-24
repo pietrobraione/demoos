@@ -225,7 +225,18 @@ int syscall_fork() {
 }
 
 int syscall_send_message(int destination_pid, char* body) {
-  return send_message(current_process, destination_pid, body);
+  struct PCB* destination_process = NULL;
+  for (int i = 0; i < n_processes; i++) {
+      if (processes[i]->pid == destination_pid) {
+          destination_process = processes[i];
+      }
+  }
+
+  if (destination_process == NULL) {
+      return -1;
+  }
+
+  return send_message(current_process, destination_process, body);
 }
 
 void syscall_receive_message(char* body) {
@@ -233,7 +244,18 @@ void syscall_receive_message(char* body) {
 }
 
 int syscall_send_signal(int destination_pid, int signal_flag) {
-  return send_signal(destination_pid, signal_flag);
+    struct PCB* destination_process = NULL;
+    for (int i = 0; i < n_processes; i++) {
+        if (processes[i]->pid == destination_pid) {
+            destination_process = processes[i];
+        }
+    }
+
+    if (destination_process == NULL) {
+        return -1;
+    }
+
+  return send_signal(destination_process, signal_flag);
 }
 
 int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]) {  

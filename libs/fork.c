@@ -9,7 +9,9 @@
 
 int map_mmio_registers(struct PCB* process);
 
-// Creates a new process that executes the given function
+// Creates a new process
+// If clone_flags is PF_KTHREAD, the process will execute the given function; otherwhise it will be
+// a copy of the current process
 int copy_process(unsigned long clone_flags, unsigned long function, unsigned long argument) {
   // I disable the preempt to avoid this function to be interrupted
   preempt_disable();
@@ -44,7 +46,6 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
     copy_virtual_memory(new_process);
     int error = map_mmio_registers(new_process);
     if (error) {
-      uart_puts("[ERROR] Cannot map MMIO in process page tables\n");
       return -1;
     }
  }
@@ -69,6 +70,8 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
   return process_id;
 }
 
+// Moves the current process to the user mode, executing the code at the start position, starting
+// from the given relative program counter
 int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc) {
   struct pt_regs *regs = task_pt_regs(current_process);
 
@@ -83,23 +86,27 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
   // I also need to map the addresses for MMIO to let the process communicate with the SD card
   int error = map_mmio_registers(current_process);
   if (error) {
-    uart_puts("[ERROR] Cannot map MMIO in process page tables\n");
+    return -1;
   }
 
   set_pgd(current_process->mm.pgd);
   return 0;
 }
 
+// Returns the pointer to the registers struct in the given PCB
 struct pt_regs *task_pt_regs(struct PCB *process) {
   unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
   return (struct pt_regs *)p;
 }
 
+// Maps the MMIO registers in the process page tables
 int map_mmio_registers(struct PCB* process) {
   int error = map_sector(process, DEVICE_BASE, PHYS_MEMORY_SIZE - SECTION_SIZE, DEVICE_BASE, MMU_DEVICE_FLAGS);
   return error;
 }
 
+// Copies the given buffer in the process code addresses space; the code will be placed in the first
+// pages, until it is fully copied
 void copy_code(struct PCB* process, char* buffer, unsigned long size) {
   unsigned long copied_bytes = 0;
   for (int i = 0; i < 16; i++) {

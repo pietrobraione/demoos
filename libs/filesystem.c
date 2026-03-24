@@ -17,7 +17,7 @@ bool sd_write_adapter(const uint8_t *buffer, uint32_t sector) {
   return res != 0;
 }
 
-// Function that probes the filesystem from the SD
+// Probes the filesystem from the SD
 int sd_filesystem_init() {
   int sd_result = sd_init();
   if (sd_result != SD_OK) {

@@ -11,12 +11,12 @@
 #define PSR_MODE_EL3t	0x0000000c
 #define PSR_MODE_EL3h	0x0000000d
 
-int copy_process(unsigned long, unsigned long, unsigned long);
+int copy_process(unsigned long clone_flags, unsigned long function, unsigned long argument);
 int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc);
 void copy_code(struct PCB* process, char* buffer, unsigned long size);
 extern void cpu_switch_to_process(struct PCB *, struct PCB *);
 
-struct pt_regs* task_pt_regs(struct PCB*);
+struct pt_regs* task_pt_regs(struct PCB* process);
 
 struct pt_regs {
     unsigned long registers[31];

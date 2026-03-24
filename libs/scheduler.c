@@ -13,10 +13,17 @@ int n_processes = 0;
 
 void handle_process_signals(struct PCB* process);
 
-void preempt_enable() { current_process->preempt_disabled--; }
+// Enables the preempt for the current process
+void preempt_enable() {
+  current_process->preempt_disabled--;
+}
 
-void preempt_disable() { current_process->preempt_disabled++; }
+// Disabled the preempt for the current process
+void preempt_disable() {
+  current_process->preempt_disabled++;
+}
 
+// Finds the new process to assign the CPU and switches the context to it
 void _schedule() {
   preempt_disable();
   long max_counter, next_process_index;
@@ -55,7 +62,7 @@ void _schedule() {
   preempt_enable();
 }
 
-// Asks the scheduler to terminate the current project to run another one
+// Asks the scheduler to stop the current project to run another one
 void schedule() {
   // I give the current process the lower priority
   current_process->counter = 0;
@@ -80,6 +87,7 @@ void handle_process_signals(struct PCB* process) {
   }
 }
 
+// Switches the CPU context to the new process
 void switch_to_process(struct PCB *next_process) {
   if (current_process == next_process) {
     return;
@@ -91,8 +99,11 @@ void switch_to_process(struct PCB *next_process) {
   cpu_switch_to_process(previous_process, current_process);
 }
 
-void schedule_tail(void) { preempt_enable(); }
+void schedule_tail(void) {
+  preempt_enable();
+}
 
+// Calls the scheduler after each timer tick
 void handle_timer_tick() {
   // Necessario solo per SCHEDULING COOPERATIVO,
   // modificare kernel/kernel.c ogni volta che si cambia modalita'
@@ -108,7 +119,7 @@ void handle_timer_tick() {
   disable_irq();
 }
 
-// Terminates the current process
+// Terminates the current process and calls the scheduler
 void exit_process() {
   preempt_disable();
 
