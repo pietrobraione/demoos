@@ -553,7 +553,7 @@ void handle_exec_from_bin(char* buffer) {
   memzero((unsigned long)arguments, MAX_EXEC_ARGUMENTS * FAT_MAX_PATH_SIZE);
 
   while (strlen(arguments_raw) > 0 && n_arguments < MAX_EXEC_ARGUMENTS) {
-    char temp[] = {0};
+    char temp[SYSCALL_EXEC_ARGUMENT_DIMENSION] = {0};
     memzero((unsigned long)temp, SYSCALL_EXEC_ARGUMENT_DIMENSION);
 
     strsplit(arguments_raw, ' ', arguments[n_arguments], temp);
