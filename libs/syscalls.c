@@ -12,6 +12,8 @@
 
 #define MAX_PATH 128
 
+struct PCB* search_process(int pid);
+
 void syscall_write(char *buffer) {
   unsigned long kernel_buffer = user_to_kernel_address((unsigned long)buffer);
   uart_puts((char*)kernel_buffer);
@@ -73,7 +75,7 @@ int syscall_open_dir(const char *dir_path) {
   }
 
   Dir* dir = (Dir*)allocate_kernel_page();
-  int error = open_dir(dir_path, dir);
+  int error = open_dir((char*)dir_path, dir);
   if (error) {
     free_page((unsigned long)dir);
     return -1;
@@ -225,12 +227,7 @@ int syscall_fork() {
 }
 
 int syscall_send_message(int destination_pid, char* body) {
-  struct PCB* destination_process = NULL;
-  for (int i = 0; i < n_processes; i++) {
-      if (processes[i]->pid == destination_pid) {
-          destination_process = processes[i];
-      }
-  }
+  struct PCB* destination_process = search_process(destination_pid);
 
   if (destination_process == NULL) {
       return -1;
@@ -244,16 +241,11 @@ void syscall_receive_message(char* body) {
 }
 
 int syscall_send_signal(int destination_pid, int signal_flag) {
-    struct PCB* destination_process = NULL;
-    for (int i = 0; i < n_processes; i++) {
-        if (processes[i]->pid == destination_pid) {
-            destination_process = processes[i];
-        }
-    }
+  struct PCB* destination_process = search_process(destination_pid);
 
-    if (destination_process == NULL) {
-        return -1;
-    }
+  if (destination_process == NULL) {
+      return -1;
+  }
 
   return send_signal(destination_process, signal_flag);
 }
@@ -299,14 +291,8 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
 }
 
 int syscall_wait(int pid) {
-  int is_pid_found = 0;
-  for (int i = 0; i < N_PROCESSES; i++) {
-    if (processes[i]->pid == pid) {
-      is_pid_found = 1;
-    }
-  }
-
-  if (!is_pid_found) {
+  struct PCB* destination_process = search_process(pid);
+  if (destination_process == NULL) {
     return -1;
   }
 
@@ -392,4 +378,13 @@ void syscall_dispatcher(unsigned long* registers) {
       uart_hex(syscall_number);
       uart_puts("' not valid.\n");
   }
+}
+
+struct PCB* search_process(int pid) {
+  for (int i = 0; i < N_PROCESSES; i++) {
+      if (processes[i]->pid == pid) {
+          return processes[i];
+      }
+  }
+  return NULL;
 }

@@ -23,7 +23,7 @@
 #define MAX_EXEC_ARGUMENTS 4
 
 void handle_help();
-void handle_ls(char* buffer, char* working_directory);
+void handle_ls(char* working_directory);
 void handle_pwd(char* working_directory);
 void handle_mkdir(char* buffer, char* working_directory);
 void handle_cd(char* buffer, char* working_directory);
@@ -77,7 +77,7 @@ void shell() {
     if (memcmp(buffer, "help", 4) == 0) {
       handle_help();
     } else if (memcmp(buffer, "ls", 2) == 0) {
-      handle_ls(buffer, working_directory);
+      handle_ls(working_directory);
     } else if (memcmp(buffer, "pwd", 3) == 0) {
       handle_pwd(working_directory);
     } else if (memcmp(buffer, "mkdir", 5) == 0) {
@@ -122,7 +122,7 @@ void handle_help() {
     call_syscall_write("  exec       - Forks the current process and launches a new one from the file system\n\0");
 }
 
-void handle_ls(char *buffer, char *working_directory) {
+void handle_ls(char *working_directory) {
   int fd = call_syscall_open_dir(working_directory);
   if (fd == -1) {
     call_syscall_write("[SHELL] Error opening folder '\0");
@@ -574,6 +574,7 @@ void handle_exec_from_bin(char* buffer) {
       call_syscall_write("' binary file.\n");
       call_syscall_exit();
     }
+    call_syscall_exit();
   } else {
     int ok = call_syscall_wait(pid);
     if (ok) {
