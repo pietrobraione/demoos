@@ -311,10 +311,6 @@ void syscall_dispatcher(unsigned long* registers) {
   unsigned long syscall_number = registers[8];
 
   if (syscall_number > SYSCALLS_NUMBER) {
-    uart_puts("[KERNEL] Syscall number '");
-    uart_hex(syscall_number);
-    uart_puts("' not valid.\n");
-
     return;
   }
 
@@ -377,10 +373,6 @@ void syscall_dispatcher(unsigned long* registers) {
     case SYSCALL_WAIT_NUMBER:
       registers[0] = syscall_wait((int)registers[0]);  
       break;
-    default:
-      uart_puts("[KERNEL] Syscall number '");
-      uart_hex(syscall_number);
-      uart_puts("' not valid.\n");
   }
 }
 

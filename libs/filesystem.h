@@ -6,6 +6,7 @@
 
 #include "./fat32/fat.h"
 
+// Variable that represents the mounted file system and which is shared between all the filesystem operations
 extern Fat g_fat;
 
 int sd_filesystem_init();

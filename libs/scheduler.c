@@ -18,7 +18,7 @@ void preempt_enable() {
   current_process->preempt_disabled--;
 }
 
-// Disabled the preempt for the current process
+// Disables the preempt for the current process
 void preempt_disable() {
   current_process->preempt_disabled++;
 }
@@ -105,10 +105,6 @@ void schedule_tail(void) {
 
 // Calls the scheduler after each timer tick
 void handle_timer_tick() {
-  // Necessario solo per SCHEDULING COOPERATIVO,
-  // modificare kernel/kernel.c ogni volta che si cambia modalita'
-  // return;
-
   current_process->counter -= 1;
   if (current_process->counter > 0 || current_process->preempt_disabled == 1) {
     return;

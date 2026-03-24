@@ -16,14 +16,13 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
   // I disable the preempt to avoid this function to be interrupted
   preempt_disable();
 
-  // I ask the allocator a free page for the new PCB
-  struct PCB *new_process;
-  new_process = (struct PCB *)allocate_kernel_page();
+  struct PCB* new_process;
+  new_process = (struct PCB*)allocate_kernel_page();
   if (!new_process) {
     return -1;
   }
 
-  struct pt_regs *child_registers = task_pt_regs(new_process);
+  struct pt_regs* child_registers = task_pt_regs(new_process);
   memzero((unsigned long)child_registers, sizeof(struct pt_regs));
   memzero((unsigned long)&new_process->cpu_context, sizeof(struct cpu_context));
 
@@ -37,7 +36,7 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
     new_process->cpu_context.x19 = function;
     new_process->cpu_context.x20 = argument;
   } else {
-    struct pt_regs *current_registers = task_pt_regs(current_process);
+    struct pt_regs* current_registers = task_pt_regs(current_process);
     *child_registers = *current_registers;
 
     // The X0 register is the one which contains the return value; if the process is the child, it has to be 0
