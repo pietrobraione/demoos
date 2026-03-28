@@ -262,10 +262,16 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
 
   char* buffer = (char*)allocate_kernel_page();
   int read_bytes;
-  syscall_read_file(fd, buffer, PAGE_SIZE, &read_bytes);
+  syscall_read_file(fd, buffer, PAGE_SIZE * 16, &read_bytes);
   syscall_close_file(fd);
 
-  for (int i = 0; i < current_process->mm.n_user_pages; i++) {
+  // Code can't be more than 15 pages, because at page 16 there is the stack
+  if (read_bytes > PAGE_SIZE * 15) {
+    return -1;
+  }
+
+  int n_user_pages = current_process->mm.n_user_pages;
+  for (int i = 0; i < n_user_pages; i++) {
     unsigned long user_page = current_process->mm.user_pages[i].physical_address + VA_START;
     free_page(user_page);
 
