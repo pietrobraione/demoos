@@ -63,7 +63,7 @@ void shell() {
     call_syscall_write("$ \0");
 
     char buffer[MAX_COMMAND_DIMENSION];
-    memset(buffer, 0, MAX_COMMAND_DIMENSION);
+    memzero((unsigned long)buffer, MAX_COMMAND_DIMENSION);
     
     call_syscall_input(buffer, MAX_COMMAND_DIMENSION);
     call_syscall_write("\n\0");
@@ -131,7 +131,7 @@ void handle_ls(char *working_directory) {
 
   FatEntryInfo info;
   while (1) {
-      memset(info.name, 0, FAT_MAX_NAME_SIZE);
+      memzero((unsigned long)info.name,  FAT_MAX_NAME_SIZE);
       int result = call_syscall_get_next_entry(fd, &info);
       if (result) {
           break;
@@ -157,8 +157,10 @@ void handle_pwd(char *working_directory) {
 }
 
 void handle_mkdir(char *buffer, char *working_directory) {
-  char command[MAX_COMMAND_DIMENSION] = {0};
-  char dir_name[MAX_COMMAND_DIMENSION] = {0};
+  char command[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)command, MAX_COMMAND_DIMENSION);
+  char dir_name[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)dir_name, MAX_COMMAND_DIMENSION);
   strsplit(buffer, ' ', command, dir_name);
 
   if (*dir_name == 0) {
@@ -167,7 +169,7 @@ void handle_mkdir(char *buffer, char *working_directory) {
   }
 
   char temp[MAX_COMMAND_DIMENSION];
-  memset(temp, 0, MAX_COMMAND_DIMENSION);
+  memzero((unsigned long)temp, MAX_COMMAND_DIMENSION);
 
   if (strlen(working_directory) < MAX_COMMAND_DIMENSION) {
     strcat(temp, working_directory);
@@ -190,10 +192,13 @@ void handle_mkdir(char *buffer, char *working_directory) {
 }
 
 void handle_cd(char *buffer, char *working_directory) {
-  char command[MAX_COMMAND_DIMENSION] = {0};
-  char destination[MAX_COMMAND_DIMENSION] = {0};
-  char temp[MAX_COMMAND_DIMENSION] = {0};
-
+  char command[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)command, MAX_COMMAND_DIMENSION);
+  char destination[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)destination, MAX_COMMAND_DIMENSION);
+  char temp[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)temp, MAX_COMMAND_DIMENSION);
+  
   strsplit(buffer, ' ', command, destination);
 
   int destination_len = strlen(destination);
@@ -229,10 +234,13 @@ void handle_cd(char *buffer, char *working_directory) {
 }
 
 void handle_show(char* buffer, char* working_directory) {
-  char command[MAX_COMMAND_DIMENSION] = {0};
-  char destination[MAX_COMMAND_DIMENSION] = {0};
-  char temp[MAX_COMMAND_DIMENSION] = {0};
-
+  char command[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)command, MAX_COMMAND_DIMENSION);
+  char destination[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)destination, MAX_COMMAND_DIMENSION);
+  char temp[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)temp, MAX_COMMAND_DIMENSION);
+  
   strsplit(buffer, ' ', command, destination);
 
   if (destination[0] == '/') {
@@ -260,7 +268,9 @@ void handle_show(char* buffer, char* working_directory) {
   }
 
   if (fd > -1) {
-    char file_content[MAX_FILE_DIMENSION] = {0};
+    char file_content[MAX_FILE_DIMENSION];
+    memzero((unsigned long)file_content, MAX_COMMAND_DIMENSION);
+
     int read_bytes;
     int error = call_syscall_read_file(fd, file_content, MAX_FILE_DIMENSION, &read_bytes);
     if (error) {
@@ -316,7 +326,7 @@ void print_tree(const char *path, int depth) {
   }
   FatEntryInfo info;
   while (1) {
-    memset(info.name, 0, FAT_MAX_NAME_SIZE);
+    memzero((unsigned long)info.name, FAT_MAX_NAME_SIZE);
     int result = call_syscall_get_next_entry(fd, &info);
     if (result != 1) {
       break;
@@ -336,7 +346,9 @@ void print_tree(const char *path, int depth) {
       call_syscall_write("\n");
     }
     if (info.is_dir) {
-      char child_path[MAX_COMMAND_DIMENSION] = {0};
+      char child_path[MAX_COMMAND_DIMENSION];
+      memzero((unsigned long)child_path, MAX_COMMAND_DIMENSION);
+
       strcpy(child_path, path);
       int len = strlen(child_path);
       if (child_path[len - 1] != '/') {
@@ -350,9 +362,13 @@ void print_tree(const char *path, int depth) {
 }
 
 void handle_tree(char *buffer, char *working_directory) {
-  char command[MAX_COMMAND_DIMENSION] = {0};
-  char target[MAX_COMMAND_DIMENSION] = {0};
-  char fullpath[MAX_COMMAND_DIMENSION] = {0};
+  char command[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)command, MAX_COMMAND_DIMENSION);
+  char target[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)target, MAX_COMMAND_DIMENSION);
+  char fullpath[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)fullpath, MAX_COMMAND_DIMENSION);
+  
   strsplit(buffer, ' ', command, target);
   if (target[0] == 0) {
     memcpy(fullpath, working_directory, MAX_COMMAND_DIMENSION);
@@ -380,8 +396,11 @@ void handle_tree(char *buffer, char *working_directory) {
 }
 
 void handle_write(char* buffer, char* working_directory) {
-  char file_name[MAX_COMMAND_DIMENSION] = {0};
-  char file_content[MAX_COMMAND_DIMENSION] = {0};
+  char file_name[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)file_name, MAX_COMMAND_DIMENSION);
+
+  char file_content[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)file_content, MAX_COMMAND_DIMENSION);
 
   char* p = buffer;
   while (*p != '\0' && *p != ' ') {
@@ -410,7 +429,9 @@ void handle_write(char* buffer, char* working_directory) {
 
   file_content[i] = '\0';
 
-  char file_path[MAX_COMMAND_DIMENSION] = {0};
+  char file_path[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)file_path, MAX_COMMAND_DIMENSION);
+
   if (strlen(working_directory) + strlen(file_name) < MAX_COMMAND_DIMENSION) {
     strcat(file_path, working_directory);
     strcat(file_path, file_name);
@@ -462,7 +483,7 @@ void handle_fork_and_messages() {
 
     char buffer[MAX_FILE_DIMENSION];
     for (int i = 0; i < 5; i++) {
-      memset(buffer, 0, MAX_FILE_DIMENSION);
+      memzero((unsigned long)buffer, MAX_FILE_DIMENSION);
       call_syscall_receive_message(buffer);
       call_syscall_write("[FATHER] Message received from SON: '");
       call_syscall_write(buffer);
@@ -488,8 +509,10 @@ void handle_signals() {
 }
 
 void handle_exec(char* buffer, char* working_directory) {
-  char command[MAX_COMMAND_DIMENSION] = {0};
-  char path[MAX_COMMAND_DIMENSION] = {0};
+  char command[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)command, MAX_COMMAND_DIMENSION);
+  char path[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)path, MAX_COMMAND_DIMENSION);
 
   strsplit(buffer, ' ', command, path);
   
@@ -498,7 +521,9 @@ void handle_exec(char* buffer, char* working_directory) {
     return;
   }
 
-  char complete_path[MAX_COMMAND_DIMENSION] = {0};
+  char complete_path[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)complete_path, MAX_COMMAND_DIMENSION);
+
   if (strlen(working_directory) + strlen(path) >= MAX_COMMAND_DIMENSION) {
     call_syscall_write("[SHELL] Path is too long.\n");
     return;
@@ -530,14 +555,16 @@ void handle_exec(char* buffer, char* working_directory) {
 }
 
 void handle_exec_from_bin(char* buffer) {
-  char file_name[MAX_COMMAND_DIMENSION] = {0};
+  char file_name[MAX_COMMAND_DIMENSION];
   memzero((unsigned long)file_name, MAX_COMMAND_DIMENSION);
-  char arguments_raw[MAX_COMMAND_DIMENSION] = {0};
+  char arguments_raw[MAX_COMMAND_DIMENSION];
   memzero((unsigned long)arguments_raw, MAX_COMMAND_DIMENSION);
 
   strsplit(buffer, ' ', file_name, arguments_raw);
 
-  char complete_path[MAX_COMMAND_DIMENSION] = {0};
+  char complete_path[MAX_COMMAND_DIMENSION];
+  memzero((unsigned long)complete_path, MAX_COMMAND_DIMENSION);
+
   if (strlen("/bin/") + strlen(file_name) + strlen(".bin") >= MAX_COMMAND_DIMENSION) {
     call_syscall_write("[SHELL] Path is too long.\n");
     return;
@@ -553,7 +580,7 @@ void handle_exec_from_bin(char* buffer) {
   memzero((unsigned long)arguments, MAX_EXEC_ARGUMENTS * MAX_COMMAND_DIMENSION);
 
   while (strlen(arguments_raw) > 0 && n_arguments < MAX_EXEC_ARGUMENTS) {
-    char temp[SYSCALL_EXEC_ARGUMENT_DIMENSION] = {0};
+    char temp[SYSCALL_EXEC_ARGUMENT_DIMENSION];
     memzero((unsigned long)temp, SYSCALL_EXEC_ARGUMENT_DIMENSION);
 
     strsplit(arguments_raw, ' ', arguments[n_arguments], temp);

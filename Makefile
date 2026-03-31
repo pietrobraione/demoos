@@ -21,7 +21,7 @@ PSF_OBJS := $(PSF_SRCS:.psf=.o)
 OBJS := $(C_OBJS) $(S_OBJS) $(PSF_OBJS)
 
 
-APP_CFLAGS  := -ffreestanding -nostdlib -nostartfiles
+APP_CFLAGS  := -ffreestanding -nostdlib -nostartfiles -fno-builtin
 APP_LDFLAGS := -nostdlib -T app/app.ld
 
 APP_C_SRCS  := $(wildcard app/*.c)
