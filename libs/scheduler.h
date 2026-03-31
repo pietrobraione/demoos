@@ -88,6 +88,7 @@ struct PCB {
   struct MessagesCircularBuffer messages_buffer;
 
   int pending_signals;
+
   int pid_to_wait;
 };
 
@@ -111,8 +112,6 @@ extern void schedule();
 extern void switch_to_process(struct PCB *);
 extern void handle_timer_tick();
 extern void exit_process();
-
-// 741fade
 
 #endif
 #endif

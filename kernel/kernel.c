@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void useless_process();
 void kernel_process();
 
 void kernel_main() {
@@ -44,16 +43,10 @@ void kernel_main() {
   while (1) {}
 }
 
-void useless_process() {
-  while (1) {
-    uart_puts("[KERNEL] I am a useless process.\n");
-  }
-}
-
 void kernel_process() {
     uart_puts("[DEBUG] Kernel process started.\n");
 
-    unsigned long process = (unsigned long)&shell;
+    unsigned long process = (unsigned long)&init_process_main;
     unsigned long size = ((unsigned long)&user_end - (unsigned long)&user_begin);
     unsigned long pc = (process - (unsigned long)&user_begin);
 

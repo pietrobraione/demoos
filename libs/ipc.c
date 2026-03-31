@@ -50,7 +50,7 @@ void receive_message(struct PCB* destination_process, char* body) {
 // Pushes a message in the given circular buffer
 int push_message(struct MessagesCircularBuffer* buffer, struct Message* message) {
     int next_head = buffer->head + 1;
-    if (next_head >= MAX_MESSAGES_PER_PROCESS) {
+    if (next_head > MAX_MESSAGES_PER_PROCESS) {
         next_head = 0;
     }
 
@@ -79,7 +79,7 @@ int pop_message(struct MessagesCircularBuffer* buffer, struct Message* message) 
     }
 
     int next_tail = buffer->tail + 1;
-    if (next_tail >= MAX_MESSAGES_PER_PROCESS) {
+    if (next_tail > MAX_MESSAGES_PER_PROCESS) {
         next_tail = 0;
     }
 

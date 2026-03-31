@@ -27,8 +27,9 @@ void preempt_disable() {
 void _schedule() {
   preempt_disable();
   long max_counter, next_process_index;
+
   while (1) {
-    max_counter = -1;
+    max_counter = 0;
     next_process_index = 0;
     for (int i = 0; i < N_PROCESSES; i++) {
       if (processes[i]) {
@@ -40,7 +41,7 @@ void _schedule() {
       }
     }
 
-    if (max_counter > -1) {
+    if (max_counter > 0) {
       break;
     }
 

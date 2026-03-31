@@ -34,6 +34,8 @@ void show_invalid_entry_message(int type, unsigned long esr,
   uart_hex(esr);
   uart_puts(", address: ");
   uart_hex(address);
+  uart_puts(", process: ");
+  uart_hex(current_process->pid);
   uart_puts("\r\n");
 }
 

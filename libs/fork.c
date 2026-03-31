@@ -93,7 +93,7 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
 }
 
 // Returns the pointer to the registers struct in the given PCB
-struct pt_regs *task_pt_regs(struct PCB *process) {
+struct pt_regs* task_pt_regs(struct PCB *process) {
   unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
   return (struct pt_regs *)p;
 }
