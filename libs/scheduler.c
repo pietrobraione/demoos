@@ -27,6 +27,7 @@ void preempt_disable() {
 void _schedule() {
   preempt_disable();
   long max_counter, next_process_index;
+
   while (1) {
     max_counter = -1;
     next_process_index = 0;
@@ -65,7 +66,7 @@ void _schedule() {
 // Asks the scheduler to stop the current project to run another one
 void schedule() {
   // I give the current process the lower priority
-  current_process->counter = 0;
+  current_process->counter = -1;
   _schedule();
 }
 

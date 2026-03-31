@@ -203,12 +203,12 @@ int syscall_input(char *buffer, int len) {
       uart_putc(c);
 
       if (c == '\r' || c == '\n') {
-        // Se il carattere è invio, termino di occupare il buffer
+        // The character is enter, so I leave the uart to another process
         uart_owner = NULL;
-        buffer[current_len] = '\0';  // termina la stringa
+        buffer[current_len] = '\0';
         return current_len;
       } else if (c == 0x7F) {
-        // Se il carattere è backspace, cancello l'ultimo carattere scritto
+        // If it is a backslash, I have to delete the last character
         if (current_len > 0) {
           uart_puts("\b \b");
           current_len--;
