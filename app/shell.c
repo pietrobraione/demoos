@@ -30,8 +30,6 @@ void handle_show(char* buffer, char* working_directory);
 void handle_tree(char *buffer, char *working_directory);
 void print_tree(const char *path, int depth);
 void normalize_path(char* path);
-void handle_fork_and_messages();
-void handle_signals();
 void handle_exec(char* buffer, char* working_directory);
 void handle_exec_from_bin(char* buffer);
 
@@ -90,10 +88,6 @@ void shell() {
       handle_write(buffer, working_directory);
     } else if (memcmp(buffer, "show", 4) == 0) {
       handle_show(buffer, working_directory);
-    } else if (memcmp(buffer, "fork", 4) == 0) {
-      handle_fork_and_messages();
-    } else if (memcmp(buffer, "signals", 7) == 0) {
-      handle_signals();
     } else if (memcmp(buffer, "exec", 4) == 0) {
       handle_exec(buffer, working_directory);
     } else {
@@ -105,7 +99,7 @@ void shell() {
 }
 
 void handle_help() {
-    call_syscall_write("[demoos shell - 0.0.1]\n\0");
+    call_syscall_write("[demoos shell]\n\0");
     call_syscall_write("Available commands:\n\0");
     call_syscall_write("  help       - Show this help message\n\0");
     call_syscall_write("  pwd        - Show the current working directory\n\0");
@@ -457,62 +451,6 @@ void handle_write(char* buffer, char* working_directory) {
   }
 
   call_syscall_close_file(fd);
-}
-
-void handle_fork_and_messages() {
-  int pid = call_syscall_fork();  
-  if (pid == 0) {
-    // This yield forces the father process to start sending messages, so the son buffer will be
-    // filled and the user process will need to be blocked and resumed
-    call_syscall_yield();
-    char buffer[MAX_FILE_DIMENSION];
-    for (int i = 0; i < 5; i++) {
-      memzero((unsigned long)buffer, MAX_FILE_DIMENSION);
-      call_syscall_receive_message(buffer);
-      call_syscall_write("[FATHER] Message received from FATHER: '");
-      call_syscall_write(buffer);
-      call_syscall_write("'.\n");
-    }
-    call_syscall_exit();
-  } else {
-    // The father will send 5 messages to the son
-    char* messages[5];
-    memzero((unsigned long)messages, 5);
-    messages[0] = "hello";
-    messages[1] = "world";
-    messages[2] = "demoos";
-    messages[3] = "is";
-    messages[4] = "great!";
-
-    call_syscall_write("[SON] Sending message to SON\n");
-    for (int i = 0; i < 5; i++) {
-      int ok = call_syscall_send_message(pid, messages[i]);
-      if (ok == -1) {
-        call_syscall_write("[SON] Error sending message to SON.\n");
-        break;
-      }
-      call_syscall_write("[SON] Message '");
-      call_syscall_write(messages[i]);
-      call_syscall_write("' sent to SON.\n");
-    }
-    call_syscall_write("[SON] I sent all the messages\n");
-  }
-}
-
-void handle_signals() {
-  int pid = call_syscall_fork();
-  if (pid == 0) {
-    call_syscall_write("[SON] Started...\n");
-    while (1) {
-      call_syscall_write("[SON] I am the son and I'm using the CPU just for fun\n");
-      call_syscall_yield();
-    }
-    call_syscall_write("[SON] This line should never be printed\n");
-  } else {
-    call_syscall_yield();
-    call_syscall_send_signal(pid, SIGNAL_KILL);
-    call_syscall_write("[FATHER] I terminate my son.\n");
-  }
 }
 
 void handle_exec(char* buffer, char* working_directory) {
