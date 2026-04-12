@@ -9,7 +9,7 @@ struct PCB *current_process = &init_process;
 struct PCB *processes[N_PROCESSES] = {
     &init_process,
 };
-int n_processes = 0;
+int n_processes = 1;
 
 void handle_process_signals(struct PCB* process);
 

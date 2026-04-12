@@ -59,7 +59,7 @@ void map_page(struct PCB* process, unsigned long virtual_address, unsigned long 
     if (!process->mm.pgd) {
         process->mm.pgd = get_free_page();
         memzero(process->mm.pgd + VA_START, PAGE_SIZE);
-        process->mm.kernel_pages[++process->mm.n_kernel_pages] = process->mm.pgd;
+        process->mm.kernel_pages[process->mm.n_kernel_pages++] = process->mm.pgd;
     }
     unsigned long pgd = process->mm.pgd;
 
@@ -69,21 +69,21 @@ void map_page(struct PCB* process, unsigned long virtual_address, unsigned long 
     unsigned long pud = map_table(pgd_virtual_address, PGD_SHIFT, virtual_address, &new_table_entry_created);
     if (new_table_entry_created) {
         // The PUD table has been created and I need to track it
-        process->mm.kernel_pages[++process->mm.n_kernel_pages] = pud;
+        process->mm.kernel_pages[process->mm.n_kernel_pages++] = pud;
     }
 
     unsigned long* pud_virtual_address = (unsigned long*)(pud + VA_START);
     unsigned long pmd = map_table(pud_virtual_address, PUD_SHIFT, virtual_address, &new_table_entry_created);
     if (new_table_entry_created) {
         // The PUD table has been created and I need to track it
-        process->mm.kernel_pages[++process->mm.n_kernel_pages] = pmd;
+        process->mm.kernel_pages[process->mm.n_kernel_pages++] = pmd;
     }
 
     unsigned long* pmd_virtual_address = (unsigned long*)(pmd + VA_START);
     unsigned long pte = map_table(pmd_virtual_address, PMD_SHIFT, virtual_address, &new_table_entry_created);
     if (new_table_entry_created) {
         // The PUD table has been created and I need to track it
-        process->mm.kernel_pages[++process->mm.n_kernel_pages] = pte;
+        process->mm.kernel_pages[process->mm.n_kernel_pages++] = pte;
     }
 
     unsigned long* pte_virtual_address = (unsigned long*)(pte + VA_START);
