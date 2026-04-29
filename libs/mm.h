@@ -53,8 +53,6 @@ unsigned long allocate_user_page(struct PCB* process, unsigned long virtual_addr
 
 void set_pgd(unsigned long pgd);
 
-unsigned long user_to_kernel_address(unsigned long user_virtual_address);
-
 #endif
 
 #endif

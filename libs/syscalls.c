@@ -15,8 +15,7 @@
 struct PCB* search_process(int pid);
 
 void syscall_write(char *buffer) {
-  unsigned long kernel_buffer = user_to_kernel_address((unsigned long)buffer);
-  uart_puts((char*)kernel_buffer);
+  uart_puts((char*)buffer);
 }
 
 void syscall_write_hex(int number) {
@@ -293,8 +292,7 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
   unsigned long stack_pointer = 16 * PAGE_SIZE;
   for (int i = 0; i < n_arguments; i++) {
     stack_pointer -= SYSCALL_EXEC_ARGUMENT_DIMENSION;
-    unsigned long* stack_pointer_kernel_address = (unsigned long*)user_to_kernel_address(stack_pointer);
-    strcpy((char*)stack_pointer_kernel_address, safe_arguments[i]);
+    strcpy((char*)stack_pointer, safe_arguments[i]);
     trap_frame[i + 1] = stack_pointer;
   }
 
@@ -380,8 +378,7 @@ void syscall_dispatcher(unsigned long* registers) {
       registers[0] = syscall_send_signal((int)registers[0], (int)registers[1]);
       break;
     case SYSCALL_EXEC_NUMBER:
-      char (*kernel_arguments)[SYSCALL_EXEC_ARGUMENT_DIMENSION] = (char(*)[SYSCALL_EXEC_ARGUMENT_DIMENSION])user_to_kernel_address(registers[2]);
-      syscall_exec((char*)registers[0], registers, (int)registers[1], kernel_arguments);
+      syscall_exec((char*)registers[0], registers, (int)registers[1], (char(*)[SYSCALL_EXEC_ARGUMENT_DIMENSION])registers[2]);
       break;
     case SYSCALL_WAIT_NUMBER:
       registers[0] = syscall_wait((int)registers[0]);  

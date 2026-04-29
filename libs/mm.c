@@ -180,39 +180,6 @@ int do_mem_abort(unsigned long address, unsigned long esr) {
     return -1;
 }
 
-// Converts the virtual address of the current process in the corresponding physical address using
-// the current process page tables
-unsigned long user_to_kernel_address(unsigned long user_virtual_address) {
-    unsigned long* pgd = (unsigned long*)(current_process->mm.pgd + VA_START);
-
-    unsigned long pud_phys = pgd[(user_virtual_address >> PGD_SHIFT) & (PTRS_PER_TABLE - 1)];
-    if (!(pud_phys & 1)) {
-        return 0;
-    }
-    unsigned long* pud = (unsigned long*)((pud_phys & PAGE_MASK) + VA_START);
-
-    unsigned long pmd_phys = pud[(user_virtual_address >> PUD_SHIFT) & (PTRS_PER_TABLE - 1)];
-    if (!(pmd_phys & 1)) {
-        return 0;
-    }
-    unsigned long* pmd = (unsigned long*)((pmd_phys & PAGE_MASK) + VA_START);
-
-    unsigned long pte_phys = pmd[(user_virtual_address >> PMD_SHIFT) & (PTRS_PER_TABLE - 1)];
-    if (!(pte_phys & 1)) {
-        return 0;
-    }
-    unsigned long* pte = (unsigned long*)((pte_phys & PAGE_MASK) + VA_START);
-
-    unsigned long page_physical_address = pte[(user_virtual_address >> PAGE_SHIFT) & (PTRS_PER_TABLE - 1)];
-    if (!(page_physical_address & 1)) {
-        return 0;
-    }
-
-    unsigned long page_offset = user_virtual_address & (PAGE_SIZE - 1);
-
-    return (page_physical_address & PAGE_MASK) + page_offset + VA_START;
-}
-
 // Creates a copy of all the current process pages to another process
 int copy_virtual_memory(struct PCB* destination_process) {
     struct PCB* source_process = current_process;
