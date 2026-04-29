@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include "../../libs/mm.h"
 
 // ==============================
 // Registri mailbox (offset da MMIO_BASE)

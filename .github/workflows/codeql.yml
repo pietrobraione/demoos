@@ -1,0 +1,49 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Toolchain & Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential \
+        gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+        binutils-aarch64-linux-gnu qemu-system-arm dosfstools parted
+
+    - name: Setup Toolchain Symlinks
+      run: |
+        sudo ln -s -f $(which aarch64-linux-gnu-gcc) /usr/local/bin/aarch64-elf-gcc
+        sudo ln -s -f $(which aarch64-linux-gnu-ld) /usr/local/bin/aarch64-elf-ld
+        sudo ln -s -f $(which aarch64-linux-gnu-objcopy) /usr/local/bin/aarch64-elf-objcopy
+        sudo ln -s -f $(which aarch64-linux-gnu-ld) /usr/local/bin/aarch64-elf-ld
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: c-cpp
+        queries: security-extended,security-and-quality 
+
+    - name: Build Kernel
+      run: |
+        make
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3

@@ -1,33 +1,36 @@
 #ifndef __SYSCALLS_H
 #define __SYSCALLS_H
 
-/**
- * Definizioni delle system call e numeri associati.
- */
-
-#define __NR_SYSCALLS 4
-
-// ==============================
-// Numeri syscall
-// ==============================
-
-#define SYSCALL_WRITE_NUMBER	0
-#define SYSCALL_MALLOC_NUMBER	1
-#define SYSCALL_CLONE_NUMBER	2
-#define SYSCALL_EXIT_NUMBER		3
+#define SYSCALLS_NUMBER 19
 
 #ifndef __ASSEMBLER__
 
-void syscall_write(char* buffer);
-int syscall_clone(unsigned long stack);
-unsigned long syscall_malloc(void);
-void syscall_exit(void);
+#include "./fat32/fat.h"
+#include "./ipc.h"
+#include "../common/ipc_types.h"
+#include "../common/fat_types.h"
+#include "../common/syscalls_types.h"
 
-void call_syscall_write(char* buffer);
-int call_syscall_clone(unsigned long function, unsigned long argument, unsigned long stack);
-unsigned long call_syscall_malloc(void);
-void call_syscall_exit(void);
+void syscall_write(char* buffer);
+void syscall_write_hex(int number);
+int syscall_copy_process();
+int syscall_create_dir(char* dir_relative_path);
+int syscall_open_dir(const char* dir_relative_path);
+int syscall_open_file(char* file_relative_path, uint8_t flags);
+int syscall_close_file(int file_descriptor);
+int syscall_write_file(int file_descriptor, char* buffer, int len, int* bytes);
+int syscall_read_file(int file_descriptor, char* buffer, int len, int* bytes);
+void syscall_yield();
+int syscall_input(char* buffer, int len);
+int syscall_fork();
+int syscall_send_message(int destination_pid, char* body);
+void syscall_receive_message(char* body);
+int syscall_send_signal(int destination_pid, int signal_flag);
+int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]);
+
+int syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info);
+
+void syscall_dispatcher(unsigned long* registers);
 
 #endif
-#endif // __SYSCALLS_H
-
+#endif

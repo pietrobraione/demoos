@@ -1,43 +1,50 @@
 #ifndef __UART_H
 #define __UART_H
 
-/**
- * Driver UART0 (PL011) per Raspberry Pi 3.
- * Gestisce inizializzazione, trasmissione, ricezione e interrupt.
- */
-
-// ==============================
-// Base e registri UART0
-// ==============================
+#include <stddef.h>
 
 enum {
-	UART0_BASE		= 0x201000,
-	UART0_DR		= (UART0_BASE + 0x00),
-	UART0_RSRECR 	= (UART0_BASE + 0x04),
-	UART0_FR	 	= (UART0_BASE + 0x18),
-	UART0_ILPR		= (UART0_BASE + 0x20),
-	UART0_IBRD		= (UART0_BASE + 0x24),
-	UART0_FBRD		= (UART0_BASE + 0x28),
-	UART0_LCRH	 	= (UART0_BASE + 0x2C),
-	UART0_CR	 	= (UART0_BASE + 0x30),
-	UART0_IFLS	 	= (UART0_BASE + 0x34),
-	UART0_IMSC	 	= (UART0_BASE + 0x38),
-	UART0_RIS		= (UART0_BASE + 0x3C),
-	UART0_MIS		= (UART0_BASE + 0x40),
-	UART0_ICR		= (UART0_BASE + 0x44),
-	UART0_DMACR		= (UART0_BASE + 0x48),
-	UART0_ITCR	 	= (UART0_BASE + 0x80),
-	UART0_ITIP	 	= (UART0_BASE + 0x84),
-	UART0_ITOP	 	= (UART0_BASE + 0x88),
-	UART0_TDR		= (UART0_BASE + 0x8C)
+  // The base address for UART0.
+  UART0_BASE   = 0x201000,
+
+  // The offsets for reach register for the UART.
+  UART0_DR     = (UART0_BASE + 0x00),
+  UART0_RSRECR = (UART0_BASE + 0x04),
+  UART0_FR     = (UART0_BASE + 0x18),
+  UART0_ILPR   = (UART0_BASE + 0x20),
+  UART0_IBRD   = (UART0_BASE + 0x24),
+  UART0_FBRD   = (UART0_BASE + 0x28),
+  UART0_LCRH   = (UART0_BASE + 0x2C),
+  UART0_CR     = (UART0_BASE + 0x30),
+  UART0_IFLS   = (UART0_BASE + 0x34),
+  UART0_IMSC   = (UART0_BASE + 0x38),
+  UART0_RIS    = (UART0_BASE + 0x3C),
+  UART0_MIS    = (UART0_BASE + 0x40),
+  UART0_ICR    = (UART0_BASE + 0x44),
+  UART0_DMACR  = (UART0_BASE + 0x48),
+  UART0_ITCR   = (UART0_BASE + 0x80),
+  UART0_ITIP   = (UART0_BASE + 0x84),
+  UART0_ITOP   = (UART0_BASE + 0x88),
+  UART0_TDR    = (UART0_BASE + 0x8C)
 };
 
-void uart_init(void);
+#define UART_BUFFER_SIZE 64
+
+extern struct PCB *uart_owner;
+extern char uart_buffer[UART_BUFFER_SIZE];
+extern int uart_head; // The index in which the IRQ will write the next char
+extern int uart_tail; // The index in which the syscall will read the char
+
+void uart_init();
+
 void uart_putc(unsigned char c);
-unsigned char uart_getc(void);
+
+unsigned char uart_getc();
+
 void uart_puts(const char* str);
+
 void uart_hex(unsigned long num);
+
 void handle_uart_irq(void);
 
-#endif // __UART_H
-
+#endif

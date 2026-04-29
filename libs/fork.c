@@ -1,84 +1,104 @@
-/**
- * Implementazione fork: crea un nuovo processo kernel o utente.
- * Gestisce PCB, stack e registri.
- */
-
+#include "../arch/peripherals/base.h"
+#include "../arch/mmu.h"
 #include "fork.h"
-#include "scheduler.h"
-#include "allocator.h"
 #include "../drivers/irq/entry.h"
 #include "../drivers/uart/uart.h"
+#include "mm.h"
+#include "scheduler.h"
+#include "../common/memory.h"
 
-// ==============================
-// Creazione processo
-// ==============================
+// Creates a new process
+// If clone_flags is PF_KTHREAD, the process will execute the given function; otherwhise it will be
+// a copy of the current process
+int copy_process(unsigned long clone_flags, unsigned long function, unsigned long argument) {
+  // I disable the preempt to avoid this function to be interrupted
+  preempt_disable();
 
-int fork(unsigned long clone_flags, unsigned long function, unsigned long argument, unsigned long stack) {
-	preempt_disable();
+  struct PCB* new_process;
+  new_process = (struct PCB*)allocate_kernel_page();
+  if (!new_process) {
+    return -1;
+  }
 
-	struct PCB* new_process = (struct PCB*) get_free_page();
-	if (!new_process) return -1;
+  struct pt_regs* child_registers = task_pt_regs(new_process);
+  memzero((unsigned long)child_registers, sizeof(struct pt_regs));
+  memzero((unsigned long)&new_process->cpu_context, sizeof(struct cpu_context));
 
-	struct pt_regs* child_registers = task_pt_regs(new_process);
-	memzero((unsigned long)child_registers, sizeof(struct pt_regs));
-	memzero((unsigned long)&new_process->cpu_context, sizeof(struct cpu_context));
+  // Files are not shared with the son
+  for (int i = 0; i < MAX_FILES_PER_PROCESS; i++) {
+    new_process->files[i] = NULL;
+  }
 
-	if (clone_flags & PF_KTHREAD) {
-		// Kernel thread: solo funzione e argomento
-		new_process->cpu_context.x19 = function;
-		new_process->cpu_context.x20 = argument;
-	} else {
-		// User thread: copia registri e nuovo stack
-		struct pt_regs* current_registers = task_pt_regs(current_process);
-		*child_registers = *current_registers;
-		child_registers->registers[0] = 0;
-		child_registers->sp = stack + PAGE_SIZE;
-		new_process->stack = stack;
-	}
+  if (clone_flags & PF_KTHREAD) {
+    // If we are running a kernel thread, we only need to specify the function
+    new_process->cpu_context.x19 = function;
+    new_process->cpu_context.x20 = argument;
+  } else {
+    struct pt_regs* current_registers = task_pt_regs(current_process);
+    *child_registers = *current_registers;
 
-	int process_id = n_processes++;
-	new_process->flags = clone_flags;
-	new_process->priority = current_process->priority;
-	new_process->state = PROCESS_RUNNING;
-	new_process->counter = current_process->priority;
-	new_process->preempt_disabled = 1;
-	new_process->pid = process_id;
+    // The X0 register is the one which contains the return value; if the process is the child, it has to be 0
+    child_registers->registers[0] = 0;
 
-	new_process->cpu_context.pc = (unsigned long) ret_from_fork;
-	new_process->cpu_context.sp = (unsigned long) child_registers;
+    copy_virtual_memory(new_process);
+ }
 
-	processes[process_id] = new_process;
+  int process_id = n_processes;
+  new_process->flags = clone_flags;
+  new_process->priority = current_process->priority;
+  new_process->state = PROCESS_RUNNING;
+  new_process->counter = current_process->priority;
+  new_process->preempt_disabled = 1;
+  new_process->pid = process_id;
 
-	preempt_enable();
-	return process_id;
+  // x19 and x20 will be used in the assembly to call the function
+  new_process->cpu_context.pc = (unsigned long)ret_from_fork;
+  new_process->cpu_context.sp = (unsigned long)child_registers;
+
+  processes[process_id] = new_process;
+  n_processes++;
+
+  preempt_enable();
+
+  return process_id;
 }
 
-// ==============================
-// Passaggio a user mode
-// ==============================
+// Moves the current process to the user mode, executing the code at the start position, starting
+// from the given relative program counter
+int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc) {
+  struct pt_regs *regs = task_pt_regs(current_process);
 
-int move_to_user_mode(unsigned long pc) {
-	struct pt_regs* regs = task_pt_regs(current_process);
-	memzero((unsigned long)regs, sizeof(*regs));
+  memzero((unsigned long)regs, sizeof(struct pt_regs));
 
-	regs->pc = pc;
-	regs->pstate = PSR_MODE_EL0t;
+  regs->pstate = PSR_MODE_EL0t;
+  regs->pc = pc;
+  regs->sp = 16 * PAGE_SIZE;
 
-	unsigned long stack = get_free_page();
-	if (!stack) return -1;
+  copy_code(current_process, (void*)start, size);
 
-	regs->sp = stack + PAGE_SIZE;
-	current_process->stack = stack;
-
-	return 0;
+  set_pgd(current_process->mm.pgd);
+  return 0;
 }
 
-// ==============================
-// Accesso ai registri di un processo
-// ==============================
-
-struct pt_regs* task_pt_regs(struct PCB* process) {
-	unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
-	return (struct pt_regs*)p;
+// Returns the pointer to the registers struct in the given PCB
+struct pt_regs* task_pt_regs(struct PCB *process) {
+  unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
+  return (struct pt_regs *)p;
 }
 
+// Copies the given buffer in the process code addresses space; the code will be placed in the first
+// pages, until it is fully copied
+void copy_code(struct PCB* process, char* buffer, unsigned long size) {
+  unsigned long copied_bytes = 0;
+  for (int i = 0; i < 16; i++) {
+    unsigned long virtual_address  = i * PAGE_SIZE;
+    unsigned long kernel_virtual_address = allocate_user_page(process, virtual_address);
+
+    if (copied_bytes < size) {
+      int bytes_to_copy = (size - copied_bytes > PAGE_SIZE) ? PAGE_SIZE : size - copied_bytes;
+      memcpy((void*)kernel_virtual_address, (void*)(buffer + copied_bytes), bytes_to_copy);
+
+      copied_bytes += bytes_to_copy;
+    }
+  }
+}

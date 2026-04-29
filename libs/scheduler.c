@@ -1,113 +1,137 @@
-/**
- * Scheduler round-robin con priorità.
- * Gestisce la selezione del prossimo processo e il context switch.
- */
-
 #include "scheduler.h"
-#include "allocator.h"
-#include "cpu_switch.h"
 #include "../drivers/irq/controller.h"
-#include "../drivers/uart/uart.h" // solo debug
+#include "mm.h"
+#include "fork.h"
 
-// ==============================
-// Stato globale
-// ==============================
-
+// First I create the init process which is the first one running
 static struct PCB init_process = INIT_PROCESS;
-struct PCB* current_process = &init_process;
-struct PCB* processes[N_PROCESSES] = {&init_process, };
+struct PCB *current_process = &init_process;
+struct PCB *processes[N_PROCESSES] = {
+    &init_process,
+};
 int n_processes = 1;
 
-// ==============================
-// Preemption
-// ==============================
+void handle_process_signals(struct PCB* process);
 
-void preempt_enable(void) {
-	current_process->preempt_disabled--;
+// Enables the preempt for the current process
+void preempt_enable() {
+  current_process->preempt_disabled--;
 }
 
-void preempt_disable(void) {
-	current_process->preempt_disabled++;
+// Disables the preempt for the current process
+void preempt_disable() {
+  current_process->preempt_disabled++;
 }
 
-// ==============================
-// Scheduler interno
-// ==============================
+// Finds the new process to assign the CPU and switches the context to it
+void _schedule() {
+  preempt_disable();
+  long max_counter, next_process_index;
 
-static void _schedule(void) {
-	preempt_disable();
-	long max_counter, next_process_index;
+  while (1) {
+    max_counter = 0;
+    next_process_index = 0;
+    for (int i = 0; i < N_PROCESSES; i++) {
+      if (processes[i]) {
+        handle_process_signals(processes[i]);
+        if (processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
+          max_counter = processes[i]->counter;
+          next_process_index = i;
+        }
+      }
+    }
 
-	while (1) {
-		max_counter = -1;
-		next_process_index = 0;
+    if (max_counter > 0) {
+      break;
+    }
 
-		for (int i = 0; i < N_PROCESSES; i++) {
-			if (processes[i] && processes[i]->state == PROCESS_RUNNING && processes[i]->counter > max_counter) {
-				max_counter = processes[i]->counter;
-				next_process_index = i;
-			}
-		}
+    // If I didn't find any process, I increment the counter of each one
+    for (int i = 0; i < N_PROCESSES; i++) {
+      if (processes[i]) {
+        processes[i]->counter = (processes[i]->counter >> 1) + processes[i]->priority;
+      }
+    }
+  }
 
-		if (max_counter > 0) break;
-
-		// Nessun processo pronto: incrementa i contatori
-		for (int i = 0; i < N_PROCESSES; i++) {
-			if (processes[i]) {
-				processes[i]->counter = (processes[i]->counter >> 1) + processes[i]->priority;
-			}
-		}
-	}
-
-	switch_to_process(processes[next_process_index]);
-	preempt_enable();
+  struct PCB* next_process = processes[next_process_index];
+  handle_process_signals(next_process);
+  
+  // I check again the process state because signals can change it
+  if (next_process->state == PROCESS_RUNNING) {
+    switch_to_process(next_process);
+  }
+  preempt_enable();
 }
 
-void schedule(void) {
-	current_process->counter = 0;
-	_schedule();
+// Asks the scheduler to stop the current project to run another one
+void schedule() {
+  // I give the current process the lower priority
+  current_process->counter = 0;
+  _schedule();
 }
 
-void switch_to_process(struct PCB* next_process) {
-	if (current_process == next_process) return;
-	struct PCB* previous_process = current_process;
-	current_process = next_process;
-	cpu_switch_to_process(previous_process, current_process);
+// Modifies the process PCB depending on the pending signals
+void handle_process_signals(struct PCB* process) {
+  if (!process->pending_signals) {
+    return;
+  }
+
+  if (process->pending_signals & (1 << SIGNAL_KILL)) {
+    process->state = PROCESS_ZOMBIE;
+    process->pending_signals &= ~(1 << SIGNAL_KILL);
+  } else if (process->pending_signals & (1 << SIGNAL_STOP)) {
+    process->state = PROCESS_STOPPED;
+    process->pending_signals &= ~(1 << SIGNAL_STOP);
+  } else if (process->pending_signals & (1 << SIGNAL_RESUME)) {
+    process->state = PROCESS_RUNNING;
+    process->pending_signals &= ~(1 << SIGNAL_RESUME);
+  }
+}
+
+// Switches the CPU context to the new process
+void switch_to_process(struct PCB *next_process) {
+  if (current_process == next_process) {
+    return;
+  }
+  struct PCB *previous_process = current_process;
+  current_process = next_process;
+
+  set_pgd(next_process->mm.pgd);
+  cpu_switch_to_process(previous_process, current_process);
 }
 
 void schedule_tail(void) {
-	preempt_enable();
+  preempt_enable();
 }
 
-void handle_timer_tick(void) {
-	// In modalità cooperativa si può disabilitare qui
-	// return;
-
-	uart_puts("[DEBUG] Handling timer tick\n");
-	current_process->counter -= 1;
-	if (current_process->counter > 0 || current_process->preempt_disabled == 1) return;
-
-	current_process->counter = 0;
-	enable_irq();
-	_schedule();
-	disable_irq();
+// Calls the scheduler after each timer tick
+void handle_timer_tick() {
+  current_process->counter -= 1;
+  if (current_process->counter > 0 || current_process->preempt_disabled == 1) {
+    return;
+  }
+  current_process->counter = 0;
+  enable_irq();
+  _schedule();
+  disable_irq();
 }
 
-void exit_process(void) {
-	preempt_disable();
+// Terminates the current process and calls the scheduler
+void exit_process() {
+  preempt_disable();
 
-	for (int i = 0; i < N_PROCESSES; i++) {
-		if (processes[i] == current_process) {
-			processes[i]->state = PROCESS_ZOMBIE;
-			break;
-		}
-	}
+  current_process->state = PROCESS_ZOMBIE;
+  for (int i = 0; i < N_PROCESSES; i++) {
+    if (!processes[i]) {
+      continue;
+    }
 
-	if (current_process->stack) {
-		free_page(current_process->stack);
-	}
+    if (processes[i]->state == PROCESS_WAITING_ANOTHER_PROCESS && processes[i]->pid_to_wait == current_process->pid) {
+      processes[i]->state = PROCESS_RUNNING;
+      processes[i]->pid_to_wait = -1;
+    }
+  }
 
-	preempt_enable();
-	schedule();
+  preempt_enable();
+  schedule();
 }
-

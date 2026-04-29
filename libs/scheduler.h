@@ -1,94 +1,117 @@
-#ifndef __SCHEDULER_H
-#define __SCHEDULER_H
-
-/**
- * Scheduler round-robin con priorità.
- * Definisce il contesto CPU, la PCB dei processi e le funzioni di scheduling.
- */
-
-// ==============================
-// Offset per context switch ASM
-// ==============================
+#ifndef _SCHEDULER_H
+#define _SCHEDULER_H
 
 #define CPU_CONTEXT_OFFSET_IN_PCB 0
 
 #ifndef __ASSEMBLER__
 
-// ==============================
-// Parametri del sistema
-// ==============================
+#define N_PROCESSES 64
 
-#define N_PROCESSES 64			// numero massimo di processi
-#define THREAD_SIZE 4096		// dimensione dello spazio di thread
+#define THREAD_SIZE 4096
 
-// Flag processo
-#define PF_KTHREAD 0x00000002	// processo kernel (thread)
+#define MAX_FILES_PER_PROCESS 16
+#define MAX_PROCESS_PAGES 16
+#define MAX_MESSAGES_PER_PROCESS 4
+#define MAX_MESSAGES_BODY_SIZE 256
 
-// ==============================
-// Contesto CPU salvato tra switch
-// ==============================
+#define PF_KTHREAD 0x00000002
 
 struct cpu_context {
-	unsigned long x19;
-	unsigned long x20;
-	unsigned long x21;
-	unsigned long x22;
-	unsigned long x23;
-	unsigned long x24;
-	unsigned long x25;
-	unsigned long x26;
-	unsigned long x27;
-	unsigned long x28;
-	unsigned long fp;			 // frame pointer (x29)
-	unsigned long sp;			 // stack pointer
-	unsigned long pc;			 // program counter
+  unsigned long x19;
+  unsigned long x20;
+  unsigned long x21;
+  unsigned long x22;
+  unsigned long x23;
+  unsigned long x24;
+  unsigned long x25;
+  unsigned long x26;
+  unsigned long x27;
+  unsigned long x28;
+  unsigned long fp;
+  unsigned long sp;
+  unsigned long pc;
 };
 
-// ==============================
-// PCB: Process Control Block
-// ==============================
+#include "./fat32/fat.h"
+#include "../common/ipc_types.h"
+
+typedef enum { RESOURCE_TYPE_FILE, RESOURCE_TYPE_FOLDER } ResourceType;
+
+typedef struct {
+  ResourceType resource_type;
+
+  union {
+    File *f;
+    Dir *d;
+  };
+} FatResource;
+
+struct user_page {
+    unsigned long physical_address;
+    unsigned long virtual_address;
+};
+
+struct mm_struct {
+    unsigned long pgd;
+    int n_user_pages;
+    struct user_page user_pages[MAX_PROCESS_PAGES];
+    int n_kernel_pages;
+    unsigned long kernel_pages[MAX_PROCESS_PAGES];
+};
+
+struct Message {
+    struct PCB* source_process;
+    struct PCB* destination_process;
+    char body[MAX_MESSAGES_BODY_SIZE];
+};
+
+struct MessagesCircularBuffer {
+  volatile int head;
+  volatile int tail;
+  struct Message buffer[MAX_MESSAGES_PER_PROCESS];
+};
 
 struct PCB {
-	struct cpu_context cpu_context; // contesto CPU
-	long state;					 	// stato (RUNNING/ZOMBIE)
-	long counter;					// contatore time-slice
-	long priority;					// priorità di scheduling
-	int	preempt_disabled;			// livello di preemption disabilitata
-	long pid;						// identificatore processo
+  struct cpu_context cpu_context;
+  long state;
+  long counter;
+  long priority;
+  int preempt_disabled;
+  long pid;
 
-	unsigned long stack;			// base dello stack utente (se presente)
-	unsigned long flags;			// flag di creazione (es. PF_KTHREAD)
+  unsigned long flags;
+
+  FatResource *files[MAX_FILES_PER_PROCESS];
+
+  struct mm_struct mm;
+
+  struct MessagesCircularBuffer messages_buffer;
+
+  int pending_signals;
+
+  int pid_to_wait;
 };
 
-// Stati processo
 #define PROCESS_RUNNING 1
-#define PROCESS_ZOMBIE	2
+#define PROCESS_ZOMBIE 2
+#define PROCESS_WAITING_UART_INPUT 3
+#define PROCESS_WAITING_TO_RECEIVE_MESSAGE 4
+#define PROCESS_WAITING_TO_SEND_MESSAGE 5
+#define PROCESS_WAITING_ANOTHER_PROCESS 6
+#define PROCESS_STOPPED 7
 
-// Processo init (primo processo in esecuzione)
-#define INIT_PROCESS \
-	{ {0,0,0,0,0,0,0,0,0,0,0,0,0}, \
-		/* state */ 0, \
-		/* counter */ 1, \
-		/* priority */ 1, \
-		/* preempt_disabled */ 0, \
-		/* pid */ 0 \
-	}
+#define INIT_PROCESS {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, 1, 0, 0, 0, {}, {0, 0, {}, 0, {}}, {}, 0, -1}
 
-// ==============================
-// Variabili globali dello scheduler
-// ==============================
-
-extern struct PCB* current_process;
-extern struct PCB* processes[N_PROCESSES];
+extern struct PCB *current_process;
+extern struct PCB *processes[N_PROCESSES];
 extern int n_processes;
 
-void preempt_enable(void);
-void preempt_disable(void);
-void schedule(void);
-void switch_to_process(struct PCB* next);
-void handle_timer_tick(void);
-void exit_process(void);
+extern void preempt_enable();
+extern void preempt_disable();
+extern void schedule();
+extern void switch_to_process(struct PCB *);
+extern void handle_timer_tick();
+extern void exit_process();
 
-#endif // __ASSEMBLER__
-#endif // __SCHEDULER_H
-
+#endif
+#endif

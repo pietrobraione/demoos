@@ -1,14 +1,11 @@
-#ifndef __UTILS_H
-#define __UTILS_H
+#ifndef _UTILS_H
+#define _UTILS_H
 
-/**
- * Funzioni di utilità assembly: livello di eccezione corrente,
- * delay busy-wait e attesa millisecondi.
- */
+#include <stddef.h>
 
-int get_el(void);
-void delay(unsigned long cycles);
-void wait_msec(unsigned int ms);
+// Returns the exception level of the CPU
+extern int get_el();
+// Delays the cpu by the given number of cycles
+extern void delay(unsigned long cycles);
 
-#endif // __UTILS_H
-
+#endif
