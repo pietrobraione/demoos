@@ -7,8 +7,6 @@
 #include "scheduler.h"
 #include "../common/memory.h"
 
-int map_mmio_registers(struct PCB* process);
-
 // Creates a new process
 // If clone_flags is PF_KTHREAD, the process will execute the given function; otherwhise it will be
 // a copy of the current process
@@ -43,10 +41,6 @@ int copy_process(unsigned long clone_flags, unsigned long function, unsigned lon
     child_registers->registers[0] = 0;
 
     copy_virtual_memory(new_process);
-    int error = map_mmio_registers(new_process);
-    if (error) {
-      return -1;
-    }
  }
 
   int process_id = n_processes;
@@ -82,12 +76,6 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
 
   copy_code(current_process, (void*)start, size);
 
-  // I also need to map the addresses for MMIO to let the process communicate with the SD card
-  int error = map_mmio_registers(current_process);
-  if (error) {
-    return -1;
-  }
-
   set_pgd(current_process->mm.pgd);
   return 0;
 }
@@ -96,12 +84,6 @@ int move_to_user_mode(unsigned long start, unsigned long size, unsigned long pc)
 struct pt_regs* task_pt_regs(struct PCB *process) {
   unsigned long p = (unsigned long)process + THREAD_SIZE - sizeof(struct pt_regs);
   return (struct pt_regs *)p;
-}
-
-// Maps the MMIO registers in the process page tables
-int map_mmio_registers(struct PCB* process) {
-  int error = map_sector(process, DEVICE_BASE, PHYS_MEMORY_SIZE - SECTION_SIZE, DEVICE_BASE, MMU_DEVICE_FLAGS);
-  return error;
 }
 
 // Copies the given buffer in the process code addresses space; the code will be placed in the first
