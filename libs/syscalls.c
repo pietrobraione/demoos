@@ -296,9 +296,6 @@ int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char ar
     trap_frame[i + 1] = stack_pointer;
   }
 
-  current_process->cpu_context.pc = 0;
-  current_process->cpu_context.sp = stack_pointer;
-
   trap_frame[31] = stack_pointer;  // I reset the stack pointer
   trap_frame[32] = 0;              // I reset the program counter
 
