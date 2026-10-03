@@ -24,8 +24,19 @@
 #define SYSCALL_EXEC_NUMBER 16
 #define SYSCALL_WAIT_NUMBER 17
 #define SYSCALL_WRITE_HEX_NUMBER 18
+#define SYSCALL_GET_TIME_NUMBER 19
+#define SYSCALL_SET_SCHED_PARAM_NUMBER 20
 
 // The maximum size of each argument passed to the exec systemcall
 #define SYSCALL_EXEC_ARGUMENT_DIMENSION 64
+
+// Selectors for the set_sched_param syscall: which static scheduling parameter
+// of the target process has to be changed. One generic syscall covers the
+// per-process knobs of all the algorithms, in the spirit of the POSIX
+// setpriority()/nice() interface generalized like Linux's sched_setattr
+// ref: man 2 setpriority (POSIX), man 2 sched_setattr (Linux)
+#define SCHED_PARAM_PRIORITY 0        // static priority (priority aging)
+#define SCHED_PARAM_TICKETS 1         // lottery tickets (proportional share)
+#define SCHED_PARAM_QUEUE_PRIORITY 2  // multilevel queue level (MLQ/MLFQ)
 
 #endif

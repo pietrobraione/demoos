@@ -5,6 +5,7 @@
 
 void init_process_main() {
   int pid = call_syscall_fork();
+  
   if (pid == 0) {
     int error = call_syscall_exec("/bin/shell.bin", 0, NULL);
     if (error) {
@@ -13,8 +14,13 @@ void init_process_main() {
     }
   } else {
     call_syscall_write("[INIT] Init process started \n");
-    while (1) {
-      call_syscall_yield();
-    }
+  
+    // 1. Fix: We pass the PID of the Shell!
+    call_syscall_wait(pid);
+  
+    // 2. Improvement: Safety net. 
+    // If the shell dies and the Init process wakes up, we don't let it fall into the void.
+    // We ensure it terminates cleanly.
+    call_syscall_exit(); 
   }
 }

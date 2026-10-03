@@ -73,5 +73,12 @@ int call_syscall_send_message(int destination_pid, char* body);
 void call_syscall_receive_message(char* body);
 // Sends a signal to another process
 int call_syscall_send_signal(int destination_pid, int signal_flag);
+// Sets a static scheduling parameter (SCHED_PARAM_PRIORITY, SCHED_PARAM_TICKETS
+// or SCHED_PARAM_QUEUE_PRIORITY) of the process with the given pid; this is how
+// processes with different priorities are created: fork first, then the parent
+// sets the child's parameters (like the POSIX nice()/setpriority() scheme)
+int call_syscall_set_sched_param(int pid, int param, int value);
+
+unsigned long call_syscall_get_time();
 
 #endif

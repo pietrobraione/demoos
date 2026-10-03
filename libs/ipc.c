@@ -42,7 +42,10 @@ void receive_message(struct PCB* destination_process, char* body) {
 
     for (int i = 0; i < N_PROCESSES; i++) {
         if (processes[i]->state == PROCESS_WAITING_TO_SEND_MESSAGE) {
-            processes[i]->state = PROCESS_RUNNING;
+            // The awakened process is READY: it still has to be dispatched
+            processes[i]->state = PROCESS_READY;
+
+            enqueue_process(processes[i]);
         }
     }
 }
@@ -65,7 +68,11 @@ int push_message(struct MessagesCircularBuffer* buffer, struct Message* message)
     // If the destination process is waiting for a message, I awake him
     struct PCB* destination_process = message->destination_process;
     if (destination_process->state == PROCESS_WAITING_TO_RECEIVE_MESSAGE) {
-        destination_process->state = PROCESS_RUNNING;
+        // The awakened process is READY: it still has to be dispatched
+        destination_process->state = PROCESS_READY;
+
+        //Add it to the queue
+        enqueue_process(destination_process);
     }
 
     return 0;

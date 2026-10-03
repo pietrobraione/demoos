@@ -1,7 +1,7 @@
 #ifndef __SYSCALLS_H
 #define __SYSCALLS_H
 
-#define SYSCALLS_NUMBER 19
+#define SYSCALLS_NUMBER 21
 
 #ifndef __ASSEMBLER__
 
@@ -29,8 +29,11 @@ int syscall_send_signal(int destination_pid, int signal_flag);
 int syscall_exec(char* path, unsigned long* trap_frame, int n_arguments, char arguments[][SYSCALL_EXEC_ARGUMENT_DIMENSION]);
 
 int syscall_get_next_entry(int file_descriptor, FatEntryInfo* entry_info);
+int syscall_wait(int pid);
+unsigned long syscall_get_time();
 
 void syscall_dispatcher(unsigned long* registers);
+
 
 #endif
 #endif

@@ -96,7 +96,7 @@ static inline int uart_rx_fifo_not_empty(void) {
   return !(mmio_read(UART0_FR) & (1 << 4));
 }
 
-// Gestore interrupt UART
+// Handler interrupt UART
 void handle_uart_irq(void) {
   unsigned int mis = mmio_read(UART0_MIS);
 
@@ -121,7 +121,10 @@ void handle_uart_irq(void) {
 
         for (int i = 0; i < n_processes; i++) {
           if (processes[i]->state == PROCESS_WAITING_UART_INPUT) {
-            processes[i]->state = PROCESS_RUNNING;
+            // The awakened process is READY: it still has to be dispatched
+            processes[i]->state = PROCESS_READY;
+
+            enqueue_process(processes[i]);
           }
         }
       }

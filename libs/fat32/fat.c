@@ -3,7 +3,8 @@
 
 #include "fat.h"
 #include "../../common/fat_types.h"
-#include <string.h>
+#include "../../common/string.h"
+#include "../../common/memory.h"
 
 //------------------------------------------------------------------------------
 #define LIMIT(a, b) ((a) < (b) ? (a) : (b))

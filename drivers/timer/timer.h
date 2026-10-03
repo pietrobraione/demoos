@@ -22,6 +22,16 @@
 
 #define TIMER_CS_M1	(1 << 1)
 
+// ==============================
+// Periodo del tick di sistema
+// ==============================
+
+// Durata di un tick in microsecondi (il System Timer conta a 1 MHz):
+// 10000 us = 10 ms, cioe' 100 tick al secondo. Tutti i quanti di tempo dello
+// scheduler sono espressi in tick, quindi questa costante ne fissa la durata
+// reale (es. quanto Round Robin = 10 tick = 100 ms).
+#define TIMER_PERIOD 10000 // 10ms
+
 void timer_init(void);
 void handle_timer_irq(void);
 
